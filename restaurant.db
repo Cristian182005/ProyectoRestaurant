@@ -1,0 +1,263 @@
+CREATE TABLE persona (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    telefono VARCHAR(20),
+    direccion VARCHAR(255),
+    email VARCHAR(150),
+    rol VARCHAR(50)
+);
+
+CREATE TABLE persona_natural (
+    id INTEGER PRIMARY KEY,
+    dni VARCHAR(15) UNIQUE NOT NULL,
+    nombre VARCHAR(100),
+    apellido_paterno VARCHAR(100),
+    apellido_materno VARCHAR(100),
+    fecha_nacimiento DATE,
+    avatar VARCHAR(255),
+
+    CONSTRAINT fk_persona_natural
+        FOREIGN KEY (id)
+        REFERENCES persona(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE persona_juridica (
+    id INTEGER PRIMARY KEY,
+    ruc VARCHAR(20) UNIQUE NOT NULL,
+    razon_social VARCHAR(150),
+    tipo_contribuyente VARCHAR(100),
+    actividad_economica VARCHAR(150),
+
+    CONSTRAINT fk_persona_juridica
+        FOREIGN KEY (id)
+        REFERENCES persona(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE cliente_natural (
+    id INTEGER PRIMARY KEY,
+    fecha_registro DATE,
+
+    CONSTRAINT fk_cliente_natural
+        FOREIGN KEY (id)
+        REFERENCES persona_natural(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE empleado (
+    id INTEGER PRIMARY KEY,
+    especialidad VARCHAR(100),
+    turno VARCHAR(50),
+    tipo_contrato VARCHAR(50),
+    fecha_ingreso DATE,
+
+    CONSTRAINT fk_empleado
+        FOREIGN KEY (id)
+        REFERENCES persona_natural(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE cliente_juridico (
+    id INTEGER PRIMARY KEY,
+    fecha_registro DATE,
+
+    CONSTRAINT fk_cliente_juridico
+        FOREIGN KEY (id)
+        REFERENCES persona_juridica(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE proveedor (
+    id INTEGER PRIMARY KEY,
+    fecha_registro DATE,
+
+    CONSTRAINT fk_proveedor
+        FOREIGN KEY (id)
+        REFERENCES persona_juridica(id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE usuario (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    password VARCHAR(255) NOT NULL,
+    persona_id INTEGER UNIQUE NOT NULL,
+
+    CONSTRAINT fk_usuario_persona
+        FOREIGN KEY (persona_id)
+        REFERENCES persona(id)
+);
+
+CREATE TABLE insumo (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nombre VARCHAR(100),
+    descripcion TEXT,
+    stock_actual DOUBLE PRECISION,
+    stock_minimo DOUBLE PRECISION,
+    unidad_medida VARCHAR(50),
+    imagen VARCHAR(255)
+);
+
+CREATE TABLE plato (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nombre VARCHAR(100),
+    descripcion TEXT,
+    imagen VARCHAR(255),
+    activo BOOLEAN,
+    categoria VARCHAR(50),
+    precio DOUBLE PRECISION
+);
+
+CREATE TABLE ingrediente_plato (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    plato_id INTEGER NOT NULL,
+    insumo_id INTEGER NOT NULL,
+    cantidad_requerida DOUBLE PRECISION,
+
+    CONSTRAINT fk_ingrediente_plato
+        FOREIGN KEY (plato_id)
+        REFERENCES plato(id),
+
+    CONSTRAINT fk_ingrediente_insumo
+        FOREIGN KEY (insumo_id)
+        REFERENCES insumo(id)
+);
+
+CREATE TABLE mesa (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    numero INTEGER,
+    estado VARCHAR(50),
+    capacidad INTEGER
+);
+
+CREATE TABLE pedido (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    estado_orden VARCHAR(50),
+    hora_tomada_del_pedido TIMESTAMP,
+    mesa_id INTEGER NOT NULL,
+    empleado_id INTEGER NOT NULL,
+
+    CONSTRAINT fk_pedido_mesa
+        FOREIGN KEY (mesa_id)
+        REFERENCES mesa(id),
+
+    CONSTRAINT fk_pedido_empleado
+        FOREIGN KEY (empleado_id)
+        REFERENCES empleado(id)
+);
+
+CREATE TABLE detalle_pedido (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    pedido_id INTEGER NOT NULL,
+    plato_id INTEGER NOT NULL,
+    cantidad INTEGER,
+    precio_unitario DOUBLE PRECISION,
+
+    CONSTRAINT fk_detalle_pedido
+        FOREIGN KEY (pedido_id)
+        REFERENCES pedido(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_detalle_plato
+        FOREIGN KEY (plato_id)
+        REFERENCES plato(id)
+);
+
+CREATE TABLE ingreso_insumo (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    fecha_ingreso DATE,
+    proveedor_id INTEGER NOT NULL,
+    empleado_id INTEGER NOT NULL,
+
+    CONSTRAINT fk_ingreso_proveedor
+        FOREIGN KEY (proveedor_id)
+        REFERENCES proveedor(id),
+
+    CONSTRAINT fk_ingreso_empleado
+        FOREIGN KEY (empleado_id)
+        REFERENCES empleado(id)
+);
+
+CREATE TABLE detalle_ingreso (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    ingreso_insumo_id INTEGER NOT NULL,
+    cantidad DOUBLE PRECISION,
+    insumo_id INTEGER NOT NULL,
+
+    CONSTRAINT fk_detalle_ingreso
+        FOREIGN KEY (ingreso_insumo_id)
+        REFERENCES ingreso_insumo(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_detalle_insumo
+        FOREIGN KEY (insumo_id)
+        REFERENCES insumo(id)
+);
+
+CREATE TABLE merma (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    insumo_id INTEGER NOT NULL,
+    cantidad DOUBLE PRECISION,
+    motivo VARCHAR(100),
+    observacion TEXT,
+    empleado_id INTEGER NOT NULL,
+    fecha_registro TIMESTAMP,
+    estado VARCHAR(50),
+
+    CONSTRAINT fk_merma_insumo
+        FOREIGN KEY (insumo_id)
+        REFERENCES insumo(id),
+
+    CONSTRAINT fk_merma_empleado
+        FOREIGN KEY (empleado_id)
+        REFERENCES empleado(id)
+);
+
+CREATE TABLE comprobante (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    fecha_emision DATE,
+    hora_emision TIME,
+    gravado DOUBLE PRECISION,
+    igv DOUBLE PRECISION,
+    precio_total DOUBLE PRECISION,
+    tipo_pago VARCHAR(50),
+    vuelto_pago DOUBLE PRECISION,
+    cajero_id INTEGER NOT NULL,
+    pedido_id INTEGER NOT NULL,
+    monto_recibido DOUBLE PRECISION,
+
+    CONSTRAINT fk_comprobante_empleado
+        FOREIGN KEY (cajero_id)
+        REFERENCES empleado(id),
+
+    CONSTRAINT fk_comprobante_pedido
+        FOREIGN KEY (pedido_id)
+        REFERENCES pedido(id)
+);
+
+CREATE TABLE boleta (
+    id INTEGER PRIMARY KEY,
+    cliente_natural_id INTEGER NOT NULL,
+
+    CONSTRAINT fk_boleta_comprobante
+        FOREIGN KEY (id)
+        REFERENCES comprobante(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_boleta_cliente
+        FOREIGN KEY (cliente_natural_id)
+        REFERENCES cliente_natural(id)
+);
+
+CREATE TABLE factura (
+    id INTEGER PRIMARY KEY,
+    cliente_juridico_id INTEGER NOT NULL,
+
+    CONSTRAINT fk_factura_comprobante
+        FOREIGN KEY (id)
+        REFERENCES comprobante(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_factura_cliente
+        FOREIGN KEY (cliente_juridico_id)
+        REFERENCES cliente_juridico(id)
+);
