@@ -73,6 +73,16 @@ public class PlatoService {
 	}
 
 	@Transactional
+	public Plato cambiarDisponibilidad(Integer id, Boolean activo) {
+		if (activo == null) {
+			throw new DatoInvalidoException("La disponibilidad del plato es obligatoria");
+		}
+		Plato plato = buscarPlato(id);
+		plato.setActivo(activo);
+		return platoRepository.save(plato);
+	}
+
+	@Transactional
 	public void eliminar(Integer id) {
 		Plato plato = buscarPlato(id);
 		if (plato.getActivo() != null && plato.getActivo()) {
@@ -95,13 +105,22 @@ public class PlatoService {
 		if (request.nombre() == null || request.nombre().isBlank()) {
 			throw new DatoInvalidoException("El nombre del plato es obligatorio");
 		}
+		if (request.nombre().trim().length() > 100) {
+			throw new DatoInvalidoException("El nombre del plato no puede superar 100 caracteres");
+		}
 		if (request.categoria() == null || request.categoria().isBlank()) {
 			throw new DatoInvalidoException("La categoría del plato es obligatoria");
+		}
+		if (request.categoria().trim().length() > 50) {
+			throw new DatoInvalidoException("La categoría del plato no puede superar 50 caracteres");
+		}
+		if (request.imagen() != null && request.imagen().length() > 255) {
+			throw new DatoInvalidoException("La imagen del plato no puede superar 255 caracteres");
 		}
 		if (request.precio() == null) {
 			throw new DatoInvalidoException("El precio del plato es obligatorio");
 		}
-		if (request.precio() <= 0) {
+		if (request.precio() <= 0 || !Double.isFinite(request.precio())) {
 			throw new DatoInvalidoException("El precio del plato debe ser mayor a 0");
 		}
 	}

@@ -93,6 +93,9 @@ public class ComprobanteService {
 		if (request.montoRecibido() == null || request.montoRecibido() <= 0) {
 			throw new DatoInvalidoException("El monto recibido debe ser mayor a 0");
 		}
+		if (!Double.isFinite(request.montoRecibido())) {
+			throw new DatoInvalidoException("El monto recibido no es un valor válido");
+		}
 		boolean esBoleta = request.clienteNaturalId() != null;
 		boolean esFactura = request.clienteJuridicoId() != null;
 		if (esBoleta == esFactura) {
@@ -100,7 +103,9 @@ public class ComprobanteService {
 					"Debe indicar exactamente un cliente: natural (boleta) o jurídico (factura)");
 		}
 
-		Pedido pedido = buscarPedido(request.pedidoId());
+		// bloqueo pesimista: serializa las emisiones del mismo pedido y evita dos
+		// ventas concurrentes antes de validar existByPedidoId
+		Pedido pedido = buscarPedidoBloqueado(request.pedidoId());
 		if (pedido.getEstado() != EstadoPedido.ENTREGADO) {
 			throw new OperacionNoPermitidaException(
 					"Solo se puede emitir comprobante de un pedido ENTREGADO");
@@ -209,11 +214,11 @@ public class ComprobanteService {
 						"Comprobante no encontrado con id " + id));
 	}
 
-	private Pedido buscarPedido(Integer id) {
+	private Pedido buscarPedidoBloqueado(Integer id) {
 		if (id == null) {
 			throw new DatoInvalidoException("El pedido del comprobante es obligatorio");
 		}
-		return pedidoRepository.findById(id)
+		return pedidoRepository.findByIdParaBloqueo(id)
 				.orElseThrow(() -> new RecursoNoEncontradoException("Pedido no encontrado con id " + id));
 	}
 

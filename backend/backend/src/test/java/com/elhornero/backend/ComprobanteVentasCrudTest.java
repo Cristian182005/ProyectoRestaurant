@@ -217,6 +217,66 @@ class ComprobanteVentasCrudTest extends BasePruebaIntegracion {
 				pedido -> assertThat(pedido.getEstado()).isEqualTo(EstadoPedido.ENTREGADO));
 	}
 
+	@Test
+	void rechazaComprobantesConCajeroOClienteInexistente() throws Exception {
+		int pedidoId = pedidoEntregado();
+
+		// el cajero se resuelve despues de validar el pedido: 404 y nada persiste
+		mockMvc.perform(post("/api/comprobantes").contentType(MediaType.APPLICATION_JSON)
+				.content(comprobante(pedidoId, 999999, "EFECTIVO", 100.0, clienteNaturalId,
+						null)))
+				.andExpect(status().isNotFound()).andExpect(jsonPath("$.mensaje")
+						.value("Empleado cajero no encontrado con id 999999"));
+		assertThat(comprobanteRepository.count()).isZero();
+
+		mockMvc.perform(post("/api/comprobantes").contentType(MediaType.APPLICATION_JSON)
+				.content(comprobante(pedidoId, cajeroId, "EFECTIVO", 100.0, null, 999999)))
+				.andExpect(status().isNotFound()).andExpect(jsonPath("$.mensaje")
+						.value("Cliente jurídico no encontrado con id 999999"));
+		assertThat(comprobanteRepository.count()).isZero();
+		assertThat(facturaRepository.count()).isZero();
+		assertThat(boletaRepository.count()).isZero();
+	}
+
+	@Test
+	void rechazaTiposDePagoYMontoMalFormados() throws Exception {
+		int pedidoId = pedidoEntregado();
+
+		mockMvc.perform(post("/api/comprobantes").contentType(MediaType.APPLICATION_JSON)
+				.content(comprobante(pedidoId, cajeroId, "BITCOIN", 100.0, clienteNaturalId,
+						null)))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("El cuerpo de la solicitud no tiene un formato valido"));
+		mockMvc.perform(post("/api/comprobantes").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"pedidoId\":" + pedidoId + ",\"cajeroId\":" + cajeroId
+						+ ",\"tipoPago\":\"EFECTIVO\",\"montoRecibido\":\"abc\","
+						+ "\"clienteNaturalId\":" + clienteNaturalId + "}"))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("El cuerpo de la solicitud no tiene un formato valido"));
+
+		assertThat(comprobanteRepository.count()).isZero();
+		assertThat(pedidoRepository.findById(pedidoId)).hasValueSatisfying(
+				pedido -> assertThat(pedido.getEstado()).isEqualTo(EstadoPedido.ENTREGADO));
+	}
+
+	@Test
+	void rechazaRangosDeFechaIncompletosOInvalidos() throws Exception {
+		mockMvc.perform(get("/api/comprobantes").param("desde", "2000-01-01"))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("Las fechas del rango son obligatorias"));
+		mockMvc.perform(get("/api/comprobantes").param("hasta", "2100-12-31"))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("Las fechas del rango son obligatorias"));
+		mockMvc.perform(get("/api/comprobantes").param("desde", "2026-13-45")
+				.param("hasta", "2026-12-31")).andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.mensaje")
+						.value("El parametro 'desde' tiene un valor invalido"));
+		mockMvc.perform(get("/api/comprobantes/resumen").param("desde", "no-es-fecha")
+				.param("hasta", "2026-12-31")).andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.mensaje")
+						.value("El parametro 'desde' tiene un valor invalido"));
+	}
+
 	private int pedidoEntregado() throws Exception {
 		int pedidoId = crearPedidoPendiente();
 		mockMvc.perform(put("/api/pedidos/" + pedidoId + "/estado")

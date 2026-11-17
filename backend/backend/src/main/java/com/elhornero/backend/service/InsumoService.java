@@ -61,7 +61,7 @@ public class InsumoService {
 		Insumo insumo = new Insumo();
 		aplicarDatos(insumo, request);
 		double stockActual = request.stockActual() == null ? 0.0 : request.stockActual();
-		if (stockActual < 0) {
+		if (stockActual < 0 || !Double.isFinite(stockActual)) {
 			throw new DatoInvalidoException("El stock actual no puede ser negativo");
 		}
 		insumo.setStockActual(stockActual);
@@ -79,7 +79,8 @@ public class InsumoService {
 					throw new OperacionNoPermitidaException(
 							"Ya existe otro insumo con el nombre '" + nombre + "'");
 				});
-		if (request.stockActual() != null && request.stockActual() < 0) {
+		if (request.stockActual() != null
+				&& (request.stockActual() < 0 || !Double.isFinite(request.stockActual()))) {
 			throw new DatoInvalidoException("El stock actual no puede ser negativo");
 		}
 		aplicarDatos(insumo, request);
@@ -141,8 +142,18 @@ public class InsumoService {
 		if (request.nombre() == null || request.nombre().isBlank()) {
 			throw new DatoInvalidoException("El nombre del insumo es obligatorio");
 		}
+		if (request.nombre().trim().length() > 100) {
+			throw new DatoInvalidoException("El nombre del insumo no puede superar 100 caracteres");
+		}
 		if (request.unidadMedida() == null || request.unidadMedida().isBlank()) {
 			throw new DatoInvalidoException("La unidad de medida del insumo es obligatoria");
+		}
+		if (request.unidadMedida().trim().length() > 50) {
+			throw new DatoInvalidoException(
+					"La unidad de medida del insumo no puede superar 50 caracteres");
+		}
+		if (request.imagen() != null && request.imagen().length() > 255) {
+			throw new DatoInvalidoException("La imagen del insumo no puede superar 255 caracteres");
 		}
 		if (request.stockMinimo() != null && request.stockMinimo() < 0) {
 			throw new DatoInvalidoException("El stock mínimo no puede ser negativo");

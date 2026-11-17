@@ -314,6 +314,123 @@ class PedidoDetalleCrudTest extends BasePruebaIntegracion {
 		assertThat(mesaRepository.findById(mesaLibre)).isEmpty();
 	}
 
+	@Test
+	void consultaPedidosInexistentesYFiltroInvalido() throws Exception {
+		mockMvc.perform(get("/api/pedidos/999999")).andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.mensaje").value("Pedido no encontrado con id 999999"));
+		mockMvc.perform(get("/api/pedidos").param("estado", "NOVALIDO"))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("El parametro 'estado' tiene un valor invalido"));
+	}
+
+	@Test
+	void cambiarEstadoRechazaCuerposInvalidos() throws Exception {
+		platoId = crearPlato("Plato Estado", "Platos", 20.0, true);
+		mesaId = crearMesa(27);
+		int pedidoId = crearPedido(mesaId, empleadoId, platoId, 1);
+
+		mockMvc.perform(put("/api/pedidos/" + pedidoId + "/estado")
+				.contentType(MediaType.APPLICATION_JSON).content("null"))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("El cuerpo de la solicitud no tiene un formato valido"));
+		mockMvc.perform(put("/api/pedidos/" + pedidoId + "/estado")
+				.contentType(MediaType.APPLICATION_JSON).content("{\"estado\":null}"))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("El nuevo estado del pedido es obligatorio"));
+
+		// el pedido sigue intacto en PostgreSQL
+		assertThat(pedidoRepository.findById(pedidoId)).hasValueSatisfying(
+				pedido -> assertThat(pedido.getEstado()).isEqualTo(EstadoPedido.PENDIENTE));
+	}
+
+	@Test
+	void agregarDetalleRechazaReferenciasInvalidas() throws Exception {
+		platoId = crearPlato("Plato Base Detalle", "Platos", 20.0, true);
+		int platoInactivo = crearPlato("Plato Inactivo Detalle", "Platos", 10.0, false);
+		mesaId = crearMesa(28);
+		int pedidoId = crearPedido(mesaId, empleadoId, platoId, 1);
+
+		mockMvc.perform(post("/api/pedidos/999999/detalles")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"platoId\":" + platoId + ",\"cantidad\":1}"))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.mensaje").value("Pedido no encontrado con id 999999"));
+		mockMvc.perform(post("/api/pedidos/" + pedidoId + "/detalles")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"platoId\":999999,\"cantidad\":1}"))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.mensaje").value("Plato no encontrado con id 999999"));
+		mockMvc.perform(post("/api/pedidos/" + pedidoId + "/detalles")
+				.contentType(MediaType.APPLICATION_JSON).content("{\"cantidad\":1}"))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("El detalle debe indicar el plato"));
+		mockMvc.perform(post("/api/pedidos/" + pedidoId + "/detalles")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"platoId\":" + platoId + "}"))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("La cantidad del detalle es obligatoria"));
+		mockMvc.perform(post("/api/pedidos/" + pedidoId + "/detalles")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"platoId\":" + platoInactivo + ",\"cantidad\":1}"))
+				.andExpect(status().isConflict()).andExpect(jsonPath("$.mensaje")
+						.value("El plato 'Plato Inactivo Detalle' no está disponible"));
+
+		assertThat(detallePedidoRepository.findByPedidoId(pedidoId)).hasSize(1);
+	}
+
+	@Test
+	void actualizarYEliminarDetalleInexistente() throws Exception {
+		mockMvc.perform(put("/api/detalles-pedido/999999").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"cantidad\":5}")).andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.mensaje")
+						.value("Detalle de pedido no encontrado con id 999999"));
+		mockMvc.perform(delete("/api/detalles-pedido/999999")).andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.mensaje")
+						.value("Detalle de pedido no encontrado con id 999999"));
+	}
+
+	@Test
+	void actualizarMesaRechazaNumerosDuplicados() throws Exception {
+		crearMesa(81);
+		int otraMesa = crearMesa(82);
+
+		mockMvc.perform(put("/api/mesas/" + otraMesa).contentType(MediaType.APPLICATION_JSON)
+				.content("{\"numero\":81,\"estado\":\"LIBRE\",\"capacidad\":4}"))
+				.andExpect(status().isConflict()).andExpect(jsonPath("$.mensaje")
+						.value("Ya existe otra mesa con el número 81"));
+
+		assertThat(mesaRepository.findById(otraMesa)).hasValueSatisfying(
+				mesa -> assertThat(mesa.getNumero()).isEqualTo(82));
+	}
+
+	@Test
+	void actualizarMesaRechazaDatosInvalidos() throws Exception {
+		int mesaIdLocal = crearMesa(83);
+
+		mockMvc.perform(put("/api/mesas/" + mesaIdLocal).contentType(MediaType.APPLICATION_JSON)
+				.content("{\"numero\":83,\"estado\":\"LIBRE\",\"capacidad\":0}"))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("La capacidad de la mesa debe ser mayor a 0"));
+		mockMvc.perform(put("/api/mesas/" + mesaIdLocal).contentType(MediaType.APPLICATION_JSON)
+				.content("{\"numero\":0,\"estado\":\"LIBRE\",\"capacidad\":4}"))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("El número de la mesa debe ser mayor a 0"));
+		mockMvc.perform(put("/api/mesas/" + mesaIdLocal).contentType(MediaType.APPLICATION_JSON)
+				.content("{\"numero\":83,\"estado\":\"\",\"capacidad\":4}"))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("El estado de la mesa es obligatorio"));
+		mockMvc.perform(put("/api/mesas/999999").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"numero\":84,\"estado\":\"LIBRE\",\"capacidad\":4}"))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.mensaje").value("Mesa no encontrada con id 999999"));
+
+		assertThat(mesaRepository.findById(mesaIdLocal)).hasValueSatisfying(mesa -> {
+			assertThat(mesa.getNumero()).isEqualTo(83);
+			assertThat(mesa.getCapacidad()).isEqualTo(4);
+			assertThat(mesa.getEstado()).isEqualTo("LIBRE");
+		});
+	}
+
 	private int crearPedido(int mesa, int empleado, int plato, int cantidad) throws Exception {
 		return leerId(mockMvc
 				.perform(post("/api/pedidos").contentType(MediaType.APPLICATION_JSON)

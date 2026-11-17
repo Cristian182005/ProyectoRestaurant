@@ -164,4 +164,98 @@ class InsumoInventarioCrudTest extends BasePruebaIntegracion {
 		assertThat(insumoRepository.findById(insumoId)).isEmpty();
 	}
 
+	@Test
+	void actualizarInsumoRechazaNombresDuplicados() throws Exception {
+		crearInsumo("Azucar Unica", 8.0, 2.0);
+		int otroId = crearInsumo("Sal Duplicada", 5.0, 1.0);
+
+		mockMvc.perform(put("/api/insumos/" + otroId).contentType(MediaType.APPLICATION_JSON)
+				.content(cuerpoInsumo("azucar unica", 5.0, 1.0, "KG")))
+				.andExpect(status().isConflict()).andExpect(jsonPath("$.mensaje")
+						.value("Ya existe otro insumo con el nombre 'azucar unica'"));
+
+		assertThat(insumoRepository.findById(otroId)).hasValueSatisfying(insumo -> {
+			assertThat(insumo.getNombre()).isEqualTo("Sal Duplicada");
+			assertThat(insumo.getStockActual()).isEqualTo(5.0);
+		});
+		assertThat(insumoRepository.count()).isEqualTo(2);
+	}
+
+	@Test
+	void actualizarInsumoRechazaDatosInvalidosSinTocarLaBase() throws Exception {
+		int id = crearInsumo("Pimienta Test", 7.0, 2.0);
+
+		mockMvc.perform(put("/api/insumos/" + id).contentType(MediaType.APPLICATION_JSON)
+				.content(cuerpoInsumo("Pimienta Test", -3.0, 2.0, "KG")))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("El stock actual no puede ser negativo"));
+		mockMvc.perform(put("/api/insumos/" + id).contentType(MediaType.APPLICATION_JSON)
+				.content(cuerpoInsumo("Pimienta Test", 7.0, 2.0, "")))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("La unidad de medida del insumo es obligatoria"));
+		mockMvc.perform(put("/api/insumos/" + id).contentType(MediaType.APPLICATION_JSON)
+				.content("{\"nombre\":\"\",\"unidadMedida\":\"KG\"}"))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("El nombre del insumo es obligatorio"));
+
+		assertThat(insumoRepository.findById(id)).hasValueSatisfying(insumo -> {
+			assertThat(insumo.getNombre()).isEqualTo("Pimienta Test");
+			assertThat(insumo.getStockActual()).isEqualTo(7.0);
+			assertThat(insumo.getUnidadMedida()).isEqualTo("KG");
+		});
+	}
+
+	@Test
+	void noPermiteEliminarInsumoConIngresosRegistrados() throws Exception {
+		int proveedorId = crearProveedor(9451).getId();
+		int empleadoId = crearEmpleado(9452, "Almacen").getId();
+		int insumoId = crearInsumo("Insumo Con Ingreso", 10.0, 1.0);
+
+		mockMvc.perform(post("/api/ingresos").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"proveedorId\":" + proveedorId + ",\"empleadoId\":" + empleadoId
+						+ ",\"detalles\":[{\"insumoId\":" + insumoId + ",\"cantidad\":5}]}"))
+				.andExpect(status().isCreated());
+
+		mockMvc.perform(delete("/api/insumos/" + insumoId)).andExpect(status().isConflict())
+				.andExpect(jsonPath("$.mensaje").value(
+						"No se puede eliminar el insumo porque tiene ingresos registrados"));
+
+		assertThat(insumoRepository.findById(insumoId)).isPresent();
+		assertThat(insumoRepository.findById(insumoId)).hasValueSatisfying(
+				insumo -> assertThat(insumo.getStockActual()).isEqualTo(15.0));
+	}
+
+	@Test
+	void noPermiteEliminarInsumoConMermasRegistradas() throws Exception {
+		int empleadoId = crearEmpleado(9453, "Almacen").getId();
+		int insumoId = crearInsumo("Insumo Con Merma", 10.0, 1.0);
+
+		mockMvc.perform(post("/api/mermas").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"insumoId\":" + insumoId + ",\"cantidad\":2,"
+						+ "\"motivo\":\"Dañado\",\"empleadoId\":" + empleadoId + "}"))
+				.andExpect(status().isCreated());
+
+		mockMvc.perform(delete("/api/insumos/" + insumoId)).andExpect(status().isConflict())
+				.andExpect(jsonPath("$.mensaje")
+						.value("No se puede eliminar el insumo porque tiene mermas registradas"));
+
+		assertThat(insumoRepository.findById(insumoId)).isPresent();
+		assertThat(insumoRepository.findById(insumoId)).hasValueSatisfying(
+				insumo -> assertThat(insumo.getStockActual()).isEqualTo(8.0));
+	}
+
+	@Test
+	void consultasDeStockConIdentificadoresInvalidos() throws Exception {
+		mockMvc.perform(post("/api/insumos/999999/aumentar-stock").param("cantidad", "1"))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.mensaje").value("Insumo no encontrado con id 999999"));
+		mockMvc.perform(post("/api/insumos/999999/descontar-stock").param("cantidad", "1"))
+				.andExpect(status().isNotFound());
+		mockMvc.perform(post("/api/insumos/1/aumentar-stock").param("cantidad", "abc"))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("El parametro 'cantidad' tiene un valor invalido"));
+
+		assertThat(insumoRepository.count()).isZero();
+	}
+
 }

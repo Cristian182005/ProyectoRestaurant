@@ -10,6 +10,8 @@ public interface DetallePedidoRepository extends JpaRepository<DetallePedido, In
 
 	boolean existsByPedidoId(Integer pedidoId);
 
+	long countByPedidoId(Integer pedidoId);
+
 	boolean existsByPlatoId(Integer platoId);
 
 	void deleteByPedidoId(Integer pedidoId);

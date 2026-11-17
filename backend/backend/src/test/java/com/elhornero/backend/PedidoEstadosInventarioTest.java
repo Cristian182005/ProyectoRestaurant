@@ -162,6 +162,37 @@ class PedidoEstadosInventarioTest extends BasePruebaIntegracion {
 	}
 
 	@Test
+	void elDescuentoParcialDeVariosInsumosSeRevuelveCompleto() throws Exception {
+		// dos insumos para el mismo plato: el primero tiene stock suficiente y el
+		// segundo no, de modo que al fallar el segundo debe revertirse el primero
+		int insumoSecundario = crearInsumo("Levadura Pedido", 50.0, 5.0);
+		mockMvc.perform(post("/api/ingredientes").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"platoId\":" + platoId + ",\"insumoId\":" + insumoSecundario
+						+ ",\"cantidadRequerida\":1}"))
+				.andExpect(status().isCreated());
+		// el insumo principal solo alcanza para 1 unidad del pedido (2 requeridas)
+		Insumo principal = insumoRepository.findById(insumoId).orElseThrow();
+		principal.setStockActual(3.0);
+		insumoRepository.save(principal);
+
+		int pedidoId = crearPedido(2);
+
+		mockMvc.perform(put("/api/pedidos/" + pedidoId + "/estado")
+				.contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"EN_PREPARACION\"}"))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.mensaje").value(
+						"Stock insuficiente de 'Harina Pedido': disponible 3.0, requerido 4.0"));
+
+		// ninguna fila quedo modificada: el descuento previo se revirtio
+		assertThat(insumoRepository.findById(insumoId)).hasValueSatisfying(
+				insumo -> assertThat(insumo.getStockActual()).isEqualTo(3.0));
+		assertThat(insumoRepository.findById(insumoSecundario)).hasValueSatisfying(
+				insumo -> assertThat(insumo.getStockActual()).isEqualTo(50.0));
+		assertThat(pedidoRepository.findById(pedidoId)).hasValueSatisfying(
+				pedido -> assertThat(pedido.getEstado()).isEqualTo(EstadoPedido.PENDIENTE));
+	}
+
+	@Test
 	void elListadoPorEstadoReflejaLosCambios() throws Exception {
 		int pedidoId = crearPedido(1);
 		mockMvc.perform(get("/api/pedidos").param("estado", "PENDIENTE"))

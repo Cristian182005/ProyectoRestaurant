@@ -85,7 +85,10 @@ public class DetallePedidoService {
 	@Transactional
 	public void eliminar(Integer id) {
 		DetallePedido detalle = buscarDetalle(id);
-		buscarPedidoEditable(detalle.getPedido().getId());
+		Pedido pedido = buscarPedidoEditable(detalle.getPedido().getId());
+		if (detallePedidoRepository.countByPedidoId(pedido.getId()) <= 1) {
+			throw new OperacionNoPermitidaException("El pedido debe tener al menos un detalle");
+		}
 		detallePedidoRepository.delete(detalle);
 	}
 
