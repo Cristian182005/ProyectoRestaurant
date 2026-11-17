@@ -1,0 +1,599 @@
+<div class="min-h-screen bg-cream-100 font-sans text-ink-900">
+  <app-sidebar
+    [open]="sidebarOpen()"
+    [activeSection]="activeSection()"
+    (sectionChange)="activeSection.set($event)"
+    (close)="closeSidebar()"
+    (logout)="onLogout()"
+  />
+
+  <div class="min-h-screen side:ml-[216px]">
+    <header
+      class="flex flex-wrap items-start justify-between gap-4 px-[18px] pt-[22px] pb-1 side:px-[26px]"
+    >
+      <div class="flex min-w-0 items-center gap-3">
+        <button
+          type="button"
+          class="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] border border-cream-400 bg-[#fffdf9] text-ink-700 shadow-pill side:hidden"
+          (click)="toggleSidebar()"
+          aria-label="Abrir menú de navegación"
+        >
+          <svg
+            class="h-[17px] w-[17px]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M4 6h16" />
+            <path d="M4 12h16" />
+            <path d="M4 18h16" />
+          </svg>
+        </button>
+
+        <div class="min-w-0">
+          <h1
+            class="font-display text-[1.6rem] font-medium leading-tight tracking-[-0.01em] text-[#221a14]"
+          >
+            Gestión de caja y ventas
+          </h1>
+          <p class="mt-1.5 text-[0.78rem] text-ink-400">
+            Caja #01 - Cajera: Rosa Huamán - Apertura S/ 600.00
+          </p>
+        </div>
+      </div>
+
+      <div class="flex shrink-0 items-center gap-2.5">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-full border border-cream-400 bg-[#fffdf9] px-3.5 py-2 text-[0.78rem] font-medium whitespace-nowrap text-[#3e3227] shadow-pill transition-colors hover:bg-cream-100"
+        >
+          <svg
+            class="h-3.5 w-3.5 text-ink-400"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M8 2v4" />
+            <path d="M16 2v4" />
+            <path d="M3 10h18" />
+            <path
+              d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"
+            />
+          </svg>
+          <span>{{ dateLabel }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="relative grid h-9 w-9 place-items-center rounded-full border border-cream-400 bg-[#fffdf9] text-ink-700 shadow-pill transition-colors hover:bg-cream-100"
+          aria-label="Notificaciones"
+        >
+          <svg
+            class="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+          </svg>
+          <span
+            class="absolute top-2 right-[9px] h-1.5 w-1.5 rounded-full border-[1.5px] border-[#fffdf9] bg-terra-600"
+            aria-hidden="true"
+          ></span>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex flex-col gap-[18px] px-[18px] pt-4 pb-8 side:px-[26px]">
+      <!-- KPIs -->
+      <section
+        class="grid grid-cols-1 gap-4 min-[620px]:grid-cols-2 min-[1180px]:grid-cols-4"
+        aria-label="Indicadores de caja"
+      >
+        @for (kpi of kpis; track kpi.label) {
+          <article
+            class="rounded-[14px] border border-black/[0.07] bg-cream-50 p-[18px] shadow-card"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <span class="text-[0.78rem] font-medium text-ink-500">{{ kpi.label }}</span>
+              <span
+                class="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-lg"
+                [class]="toneIcon[kpi.tone]"
+              >
+                <svg
+                  class="h-[15px] w-[15px]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  @for (path of kpi.icon; track path) {
+                    <path [attr.d]="path" />
+                  }
+                </svg>
+              </span>
+            </div>
+            <p
+              class="mt-3.5 font-display text-[1.75rem] leading-none font-medium tracking-[-0.01em] text-[#221a14]"
+            >
+              {{ kpi.value }}
+            </p>
+            <div class="mt-2.5 flex justify-end">
+              <span class="text-[0.72rem] font-semibold" [class]="toneDetail[kpi.tone]">
+                {{ kpi.detail }}
+              </span>
+            </div>
+          </article>
+        }
+      </section>
+
+      <!-- Filtros -->
+      <section class="flex flex-wrap items-end gap-x-4 gap-y-3" aria-label="Filtros">
+        <div class="w-[200px] max-w-full">
+          <label
+            for="caja-busqueda"
+            class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
+          >
+            Campo de texto
+          </label>
+          <div class="relative">
+            <svg
+              class="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-ink-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              id="caja-busqueda"
+              type="text"
+              placeholder="Buscar insumo"
+              [value]="searchTerm()"
+              (input)="onSearch($event)"
+              class="h-[38px] w-full rounded-[10px] border border-cream-400 bg-[#fffdf9] pr-8 pl-8 text-[0.8rem] text-ink-800 outline-none transition-colors placeholder:text-ink-300 focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+            />
+            <svg
+              class="pointer-events-none absolute top-1/2 right-3 h-3.5 w-3.5 -translate-y-1/2 text-ink-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="w-[200px] max-w-full">
+          <label
+            for="caja-categoria"
+            class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
+          >
+            Selector
+          </label>
+          <div class="relative">
+            <select
+              id="caja-categoria"
+              (change)="onCategoria($event)"
+              class="h-[38px] w-full appearance-none rounded-[10px] border border-cream-400 bg-[#fffdf9] pr-8 pl-3 text-[0.8rem] text-ink-800 outline-none transition-colors focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+            >
+              <option value="todas">Todas las categorías</option>
+              <option value="Factura">Facturas</option>
+              <option value="Boleta">Boletas</option>
+            </select>
+            <svg
+              class="pointer-events-none absolute top-1/2 right-3 h-3.5 w-3.5 -translate-y-1/2 text-ink-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="w-[200px] max-w-full">
+          <label for="caja-fecha" class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700">
+            Fecha
+          </label>
+          <div class="relative">
+            <svg
+              class="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-ink-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M8 2v4" />
+              <path d="M16 2v4" />
+              <path d="M3 10h18" />
+              <path
+                d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"
+              />
+            </svg>
+            <select
+              id="caja-fecha"
+              (change)="onFecha($event)"
+              class="h-[38px] w-full appearance-none rounded-[10px] border border-cream-400 bg-[#fffdf9] pr-8 pl-8 text-[0.8rem] text-ink-800 outline-none transition-colors focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+            >
+              @for (option of dateOptions; track option) {
+                <option [value]="option">{{ option }}</option>
+              }
+            </select>
+            <svg
+              class="pointer-events-none absolute top-1/2 right-3 h-3.5 w-3.5 -translate-y-1/2 text-ink-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="ml-auto flex flex-wrap items-center gap-4">
+          <span class="text-[0.72rem] text-ink-300">{{ filterSummary() }}</span>
+          <button
+            type="button"
+            (click)="resetFilters()"
+            class="h-[38px] rounded-[10px] border border-cream-400 bg-[#fffdf9] px-4 text-[0.8rem] font-semibold text-[#3e3227] shadow-pill transition-colors hover:bg-cream-100"
+          >
+            Secundaria
+          </button>
+        </div>
+      </section>
+
+      <!-- Tabla + panel -->
+      <section
+        class="grid grid-cols-1 gap-4 min-[1000px]:grid-cols-[minmax(0,1fr)_300px]"
+        aria-label="Comprobantes y detalle"
+      >
+        <div
+          class="overflow-hidden rounded-[14px] border border-black/[0.07] bg-cream-50 shadow-card"
+        >
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[660px] border-collapse text-left">
+              <thead class="bg-surface-dark">
+                <tr
+                  class="text-[0.62rem] font-semibold tracking-[0.06em] text-[#efe6da] uppercase"
+                >
+                  <th scope="col" class="px-4 py-3 font-semibold">Comprobante</th>
+                  <th scope="col" class="px-4 py-3 font-semibold">Tipo</th>
+                  <th scope="col" class="px-4 py-3 font-semibold">Cliente</th>
+                  <th scope="col" class="px-4 py-3 font-semibold">Pago</th>
+                  <th scope="col" class="px-4 py-3 text-right font-semibold">Total</th>
+                  <th scope="col" class="px-4 py-3 font-semibold">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of pagedRows(); track row.id) {
+                  <tr
+                    class="cursor-pointer border-t border-cream-300 transition-colors"
+                    [ngClass]="{
+                      'bg-cream-200': row.id === selectedId(),
+                      'hover:bg-cream-100': row.id !== selectedId(),
+                    }"
+                    (click)="select(row)"
+                  >
+                    <td class="px-4 py-3.5 text-[0.8rem] font-medium text-ink-800">
+                      {{ row.comprobante }}
+                    </td>
+                    <td class="px-4 py-3.5 text-[0.78rem] text-ink-600">{{ row.tipo }}</td>
+                    <td class="px-4 py-3.5 text-[0.78rem] text-ink-600">{{ row.cliente }}</td>
+                    <td class="px-4 py-3.5 text-[0.78rem] text-ink-600">{{ row.pago }}</td>
+                    <td
+                      class="px-4 py-3.5 text-right text-[0.8rem] font-semibold tabular-nums text-ink-900"
+                    >
+                      S/ {{ money(row.total) }}
+                    </td>
+                    <td class="px-4 py-3.5">
+                      <span
+                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.66rem] font-semibold whitespace-nowrap"
+                        [class]="estadoBadge[row.estado]"
+                      >
+                        <span class="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true"></span>
+                        {{ row.estado }}
+                      </span>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr class="border-t border-cream-300">
+                    <td
+                      colspan="6"
+                      class="px-4 py-10 text-center text-[0.8rem] text-ink-400"
+                    >
+                      No se encontraron comprobantes con los filtros aplicados.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div
+            class="flex flex-wrap items-center justify-between gap-3 border-t border-cream-300 px-4 py-3"
+          >
+            <span class="text-[0.72rem] text-ink-300">{{ rangeLabel() }}</span>
+            <div class="flex items-center gap-1.5">
+              <button
+                type="button"
+                class="grid h-8 w-8 place-items-center rounded-lg border border-cream-400 bg-white text-ink-500 transition-colors hover:bg-cream-100 disabled:opacity-40"
+                (click)="goToPage(page() - 1)"
+                [disabled]="page() === 1"
+                aria-label="Página anterior"
+              >
+                <svg
+                  class="h-3.5 w-3.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m15 18-6-6 6-6" />
+                </svg>
+              </button>
+
+              @for (number of pageNumbers(); track number) {
+                <button
+                  type="button"
+                  class="grid h-8 w-8 place-items-center rounded-lg border text-[0.75rem] font-semibold transition-colors"
+                  [ngClass]="
+                    number === page()
+                      ? 'border-surface-dark bg-surface-dark text-white'
+                      : 'border-cream-400 bg-white text-ink-700 hover:bg-cream-100'
+                  "
+                  (click)="goToPage(number)"
+                >
+                  {{ number }}
+                </button>
+              }
+
+              <button
+                type="button"
+                class="grid h-8 w-8 place-items-center rounded-lg border border-cream-400 bg-white text-ink-500 transition-colors hover:bg-cream-100 disabled:opacity-40"
+                (click)="goToPage(page() + 1)"
+                [disabled]="page() >= totalPages()"
+                aria-label="Página siguiente"
+              >
+                <svg
+                  class="h-3.5 w-3.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel de detalle -->
+        <aside
+          class="rounded-[14px] border border-black/[0.07] bg-cream-50 p-4 shadow-card"
+          aria-label="Detalle del comprobante"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h2
+                class="font-display text-[1.35rem] leading-tight font-semibold text-ink-900"
+              >
+                {{ selected().comprobante }}
+              </h2>
+              <p class="mt-1 text-[0.7rem] text-ink-300">
+                {{ selected().fecha }} · {{ selected().hora }}
+              </p>
+            </div>
+            <span
+              class="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.66rem] font-semibold whitespace-nowrap"
+              [class]="estadoBadge[selected().estado]"
+            >
+              <span class="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true"></span>
+              {{ selected().estado }}
+            </span>
+          </div>
+
+          <div class="mt-4">
+            <p class="text-[0.8rem] font-semibold text-ink-800">{{ selected().cliente }}</p>
+            <p class="mt-1 text-[0.72rem] text-ink-400">{{ selected().documento }}</p>
+            <p class="text-[0.72rem] text-ink-400">{{ selected().email }}</p>
+          </div>
+
+          <dl class="mt-4 border-t border-cream-300 pt-3 text-[0.78rem]">
+            <div class="flex items-center justify-between gap-3 py-1.5">
+              <dt class="text-ink-500">Subtotal</dt>
+              <dd class="font-medium tabular-nums text-ink-900">
+                S/ {{ subtotal(selected()) }}
+              </dd>
+            </div>
+            <div class="flex items-center justify-between gap-3 py-1.5">
+              <dt class="text-ink-500">IGV 18%</dt>
+              <dd class="font-medium tabular-nums text-ink-900">S/ {{ igv(selected()) }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-3 py-2">
+              <dt class="font-semibold text-ink-800">Total</dt>
+              <dd class="font-display text-[1rem] font-semibold tabular-nums text-ink-900">
+                S/ {{ money(selected().total) }}
+              </dd>
+            </div>
+            <div class="flex items-center justify-between gap-3 py-1.5">
+              <dt class="text-ink-500">Método de pago</dt>
+              <dd class="font-medium text-ink-900">{{ selected().metodo }}</dd>
+            </div>
+          </dl>
+
+          @if (selected().estado === 'Anulado') {
+            <div
+              class="mt-4 flex items-center gap-2 rounded-[10px] border-l-[3px] border-danger-600 bg-danger-100 px-3 py-2.5"
+            >
+              <svg
+                class="h-4 w-4 shrink-0 text-danger-700"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"
+                />
+                <path d="M12 9v4" />
+                <path d="M12 17h.01" />
+              </svg>
+              <span class="shrink-0 text-[0.74rem] font-semibold text-danger-700">
+                Anulado en SUNAT
+              </span>
+              <span class="flex-1 text-[0.66rem] leading-tight text-ink-500">
+                CDR emitido a las {{ selected().cdr }}.
+              </span>
+              <button
+                type="button"
+                class="shrink-0 text-[0.72rem] font-semibold whitespace-nowrap text-danger-700 hover:underline"
+              >
+                Revisar →
+              </button>
+            </div>
+          } @else {
+            <div
+              class="mt-4 flex items-center gap-2 rounded-[10px] border-l-[3px] border-ok-600 bg-ok-50 px-3 py-2.5"
+            >
+              <svg
+                class="h-4 w-4 shrink-0 text-ok-700"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"
+                />
+                <path d="M12 9v4" />
+                <path d="M12 17h.01" />
+              </svg>
+              <span class="shrink-0 text-[0.74rem] font-semibold text-ok-700">
+                SUNAT aceptado
+              </span>
+              <span class="flex-1 text-[0.66rem] leading-tight text-ink-500">
+                CDR recibido a las {{ selected().cdr }}.
+              </span>
+              <button
+                type="button"
+                class="shrink-0 text-[0.72rem] font-semibold whitespace-nowrap text-ok-700 hover:underline"
+              >
+                Revisar →
+              </button>
+            </div>
+          }
+
+          <div class="mt-4 flex flex-col gap-2">
+            <button
+              type="button"
+              class="flex items-center gap-2.5 rounded-[10px] border border-black/[0.04] bg-cream-200 px-3.5 py-3 text-[0.78rem] font-medium text-ink-700 transition-colors hover:bg-cream-300"
+            >
+              <svg
+                class="h-4 w-4 shrink-0 text-ink-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <path d="m7 10 5 5 5-5" />
+                <path d="M12 15V3" />
+              </svg>
+              Descargar PDF
+            </button>
+            <button
+              type="button"
+              class="flex items-center gap-2.5 rounded-[10px] border border-black/[0.04] bg-cream-200 px-3.5 py-3 text-[0.78rem] font-medium text-ink-700 transition-colors hover:bg-cream-300"
+            >
+              <svg
+                class="h-4 w-4 shrink-0 text-ink-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <path d="m7 10 5 5 5-5" />
+                <path d="M12 15V3" />
+              </svg>
+              Descargar XML
+            </button>
+            <button
+              type="button"
+              class="flex items-center gap-2.5 rounded-[10px] border border-black/[0.04] bg-cream-200 px-3.5 py-3 text-[0.78rem] font-medium text-ink-700 transition-colors hover:bg-cream-300"
+            >
+              <svg
+                class="h-4 w-4 shrink-0 text-ink-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <path d="m3 7 9 6 9-6" />
+              </svg>
+              Enviar por correo
+            </button>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+</div>
