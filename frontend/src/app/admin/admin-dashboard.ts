@@ -1,10 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-
-interface NavItem {
-  label: string;
-  icon: string[];
-}
+import { SidebarComponent } from '../shared/sidebar/sidebar.component';
 
 interface KpiCard {
   label: string;
@@ -42,6 +38,7 @@ interface StockAlert {
 
 @Component({
   selector: 'app-admin-dashboard',
+  imports: [SidebarComponent],
   templateUrl: './admin-dashboard.html',
   styleUrl: './admin-dashboard.css',
 })
@@ -51,71 +48,6 @@ export class AdminDashboard {
   readonly sidebarOpen = signal(false);
   readonly activeSection = signal('Resumen');
   readonly dateLabel = 'Jue, 01 oct 2026';
-
-  readonly navItems: NavItem[] = [
-    {
-      label: 'Resumen',
-      icon: [
-        'M4 4h6v6H4z',
-        'M14 4h6v6h-6z',
-        'M14 14h6v6h-6z',
-        'M4 14h6v6H4z',
-      ],
-    },
-    {
-      label: 'Salón',
-      icon: [
-        'M12 3v18',
-        'M3 9h18',
-        'M9 21V9',
-        'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z',
-      ],
-    },
-    {
-      label: 'Caja y ventas',
-      icon: [
-        'M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
-        'M13.5 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z',
-        'M6 9.5h.01',
-        'M18 14.5h.01',
-      ],
-    },
-    {
-      label: 'Pedidos',
-      icon: [
-        'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z',
-        'M14 3v5h5',
-        'M9 13h6',
-        'M9 17h4',
-      ],
-    },
-    {
-      label: 'Inventario',
-      icon: ['M21 8l-9-5-9 5 9 5 9-5z', 'M3 8v8l9 5 9-5V8', 'M12 13v8'],
-    },
-    {
-      label: 'Productos y recetas',
-      icon: [
-        'M3 2v7a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V2',
-        'M7 2v20',
-        'M21 15V2a5 5 0 0 0-5 5v6a2 2 0 0 0 2 2h3Z',
-        'M21 15v7',
-      ],
-    },
-    {
-      label: 'Reportes',
-      icon: ['M3 3v18h18', 'M18 17V9', 'M13 17V6', 'M8 17v-3'],
-    },
-    {
-      label: 'Usuarios y roles',
-      icon: [
-        'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2',
-        'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
-        'M22 21v-2a4 4 0 0 0-3-3.87',
-        'M16 3.13a4 4 0 0 1 0 7.75',
-      ],
-    },
-  ];
 
   readonly kpis: KpiCard[] = [
     {
@@ -203,11 +135,6 @@ export class AdminDashboard {
   readonly topShare = Math.round((this.payments[0].value / this.totalPayments) * 100);
 
   readonly donutGradient = this.buildDonutGradient();
-
-  selectSection(item: NavItem): void {
-    this.activeSection.set(item.label);
-    this.sidebarOpen.set(false);
-  }
 
   toggleSidebar(): void {
     this.sidebarOpen.update((open) => !open);

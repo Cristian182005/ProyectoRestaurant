@@ -1,0 +1,211 @@
+<div class="salon">
+  <app-sidebar
+    [open]="sidebarOpen()"
+    [activeSection]="activeSection()"
+    (sectionChange)="activeSection.set($event)"
+    (close)="closeSidebar()"
+    (logout)="onLogout()"
+  />
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button
+          type="button"
+          class="menu-toggle"
+          (click)="toggleSidebar()"
+          aria-label="Abrir menú de navegación"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M4 6h16" />
+            <path d="M4 12h16" />
+            <path d="M4 18h16" />
+          </svg>
+        </button>
+        <div class="topbar-titles">
+          <h1>Gestión de salón</h1>
+          <p>Mapa en vivo · 24 mesas · 18 ocupadas</p>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button type="button" class="date-pill">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M8 2v4" />
+            <path d="M16 2v4" />
+            <path d="M3 10h18" />
+            <path
+              d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"
+            />
+          </svg>
+          <span>{{ dateLabel }}</span>
+        </button>
+
+        <button type="button" class="bell" aria-label="Notificaciones">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+          </svg>
+          <span class="bell-dot" aria-hidden="true"></span>
+        </button>
+
+        <button type="button" class="primary-btn">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M12 5v14" />
+            <path d="M5 12h14" />
+          </svg>
+          Nueva Mesa
+        </button>
+      </div>
+    </header>
+
+    <main class="content">
+      <section class="filters" aria-label="Filtros de zona y estados">
+        <div class="pills">
+          @for (filter of zoneFilters; track filter.key) {
+            <button
+              type="button"
+              class="pill"
+              [class.active]="activeZone() === filter.key"
+              (click)="activeZone.set(filter.key)"
+            >
+              {{ filter.label }} · {{ zoneCounts()[filter.key] }}
+            </button>
+          }
+        </div>
+
+        <ul class="status-legend">
+          <li class="legend-item" data-status="libre">
+            <span class="legend-dot" aria-hidden="true"></span>
+            {{ statusCounts().libre }} Libres
+          </li>
+          <li class="legend-item" data-status="ocupada">
+            <span class="legend-dot" aria-hidden="true"></span>
+            {{ statusCounts().ocupada }} Ocupadas
+          </li>
+          <li class="legend-item" data-status="reservada">
+            <span class="legend-dot" aria-hidden="true"></span>
+            {{ statusCounts().reservada }} Reservadas
+          </li>
+          <li class="legend-item" data-status="por-cobrar">
+            <span class="legend-dot" aria-hidden="true"></span>
+            {{ statusCounts()['por-cobrar'] }} Por cobrar
+          </li>
+        </ul>
+      </section>
+
+      <section class="metrics" aria-label="Métricas rápidas">
+        @for (metric of metrics; track metric.label) {
+          <article class="metric">
+            <span class="metric-icon" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                @for (path of metric.icon; track path) {
+                  <path [attr.d]="path" />
+                }
+              </svg>
+            </span>
+            <div class="metric-text">
+              <span class="metric-value">{{ metric.value }}</span>
+              <span class="metric-label">{{ metric.label }}</span>
+            </div>
+          </article>
+        }
+      </section>
+
+      <section class="map-panel" aria-label="Mapa de mesas">
+        <header class="map-head">
+          <h2>Mapa de mesas</h2>
+          <span class="map-hint">Arrastra para reorganizar · Actualización automática</span>
+        </header>
+
+        <div class="tables-grid">
+          @for (table of filteredTables(); track table.id) {
+            <article
+              class="table-card"
+              [class.dragging]="draggingId() === table.id"
+              [attr.data-status]="table.status"
+              draggable="true"
+              (dragstart)="onDragStart($event, table.id)"
+              (dragover)="onDragOver($event)"
+              (drop)="onDrop(table.id)"
+              (dragend)="onDragEnd()"
+            >
+              <div class="table-top">
+                <span class="table-id">{{ table.label }}</span>
+                <span class="table-cap">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <path d="M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8" />
+                  </svg>
+                  {{ table.capacity }}
+                </span>
+                <span class="status-chip" [attr.data-status]="table.status">
+                  <span class="chip-dot" aria-hidden="true"></span>
+                  {{ statusLabels[table.status] }}
+                </span>
+              </div>
+
+              <div class="table-body">
+                <div class="table-lines">
+                  <span class="table-primary">{{ table.title }}</span>
+                  <span class="table-secondary">{{ table.subtitle }}</span>
+                </div>
+                <span
+                  class="table-amount"
+                  [class.is-empty]="table.amount === '—'"
+                >
+                  {{ table.amount }}
+                </span>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
