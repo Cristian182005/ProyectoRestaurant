@@ -1,0 +1,45 @@
+.pedido-drawer {
+  scrollbar-width: thin;
+  scrollbar-color: #ddd2c2 transparent;
+}
+
+.pedido-drawer::-webkit-scrollbar {
+  width: 8px;
+}
+
+.pedido-drawer::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #ddd2c2;
+}
+
+.pedido-drawer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pedido-items li {
+  line-height: 1.35;
+}
+
+@media (max-width: 999px) {
+  .pedido-drawer {
+    animation: pedido-drawer-in 0.22s ease;
+  }
+}
+
+@keyframes pedido-drawer-in {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pedido-drawer {
+    animation: none;
+  }
+}

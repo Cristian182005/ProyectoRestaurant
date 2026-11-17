@@ -51,6 +51,7 @@ export class SidebarComponent {
     },
     {
       label: 'Pedidos',
+      route: '/pedidos',
       icon: ['M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z', 'M14 3v5h5', 'M9 13h6', 'M9 17h4'],
     },
     {
@@ -104,6 +105,9 @@ export class SidebarComponent {
     }
     if (this.router.url.startsWith('/caja-ventas')) {
       return 'Caja y ventas';
+    }
+    if (this.router.url.startsWith('/pedidos')) {
+      return 'Pedidos';
     }
     if (this.router.url.startsWith('/dashboard')) {
       return 'Resumen';
