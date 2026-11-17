@@ -1,0 +1,424 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.login-page {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  height: 100vh;
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ---------- Panel izquierdo ---------- */
+.brand-panel {
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 2.5rem 3.5rem;
+  overflow: hidden;
+  color: #f7ede0;
+  background:
+    linear-gradient(rgba(18, 11, 8, 0.4), rgba(18, 11, 8, 0.72)),
+    url('/login-bg.png') center / cover no-repeat,
+    #120b08;
+}
+
+.brand-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  width: 100%;
+  max-width: 640px;
+}
+
+.brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #b85a2e;
+  font-family: 'Lora', Georgia, serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+.brand-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand-title {
+  font-family: 'Lora', Georgia, serif;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.brand-subtitle {
+  font-size: 0.55rem;
+  letter-spacing: 0.04em;
+  color: rgba(247, 237, 224, 0.6);
+}
+
+.brand-message {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.brand-eyebrow {
+  display: block;
+  margin-bottom: 1rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #e2692b;
+}
+
+.brand-message h1 {
+  max-width: 36rem; /* Amplía el ancho para que "La parrilla en orden, del" quepa completo arriba */
+  margin: 0;
+  font-family: 'Lora', Georgia, serif;
+  font-size: clamp(2rem, 2.8vw, 2.7rem); /* Tamaño proporcional para que cierre en 2 líneas */
+  line-height: 1.15;
+  font-weight: 400;
+}
+
+.brand-message p {
+  max-width: 34rem;
+  margin: 1.4rem 0 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: rgba(247, 237, 224, 0.75);
+}
+
+.brand-footer {
+  display: flex;
+  font-size: 0.72rem;
+  color: rgba(247, 237, 224, 0.65);
+}
+
+.brand-footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-footer svg {
+  width: 14px;
+  height: 14px;
+  color: #e2692b;
+}
+
+/* ---------- Panel derecho ---------- */
+.form-panel {
+  display: flex;
+  height: 100vh;
+  box-sizing: border-box;
+  overflow-y: auto;
+  padding: clamp(1.5rem, 4vw, 3.5rem);
+  background: #f5f1ea;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 410px;
+  margin: auto;
+  box-sizing: border-box;
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+  background: #fffdf9;
+  border: 1px solid rgba(90, 62, 38, 0.09);
+  border-radius: 18px;
+  box-shadow: 0 24px 60px rgba(58, 36, 20, 0.12);
+}
+
+.card-header h2 {
+  margin: 0;
+  font-family: 'Lora', Georgia, serif;
+  font-size: 1.8rem;
+  font-weight: 400;
+  color: #2b2018;
+}
+
+.card-header p {
+  margin: 0.5rem 0 1.5rem;
+  font-size: 0.8rem;
+  color: #8a7c6d;
+  white-space: nowrap;
+}
+
+.field {
+  margin-bottom: 1rem;
+}
+
+.field label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4a3b2e;
+}
+
+.input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  height: 44px;
+  border: 1px solid #e2d8cb;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.input-wrap:focus-within {
+  border-color: #d9712f;
+  box-shadow: 0 0 0 3px rgba(217, 113, 47, 0.14);
+}
+
+.input-wrap .icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: #b09a85;
+}
+
+.input-wrap input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  color: #2b2018;
+  background: transparent;
+}
+
+.chevron {
+  display: grid;
+  place-items: center;
+  color: #b09a85;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.chevron svg {
+  width: 14px;
+  height: 14px;
+}
+
+.toggle-password {
+  border: 0;
+  background: none;
+  padding: 4px 2px;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #b0601f;
+  cursor: pointer;
+}
+
+.toggle-password:focus-visible {
+  outline: 2px solid #d9712f;
+  border-radius: 4px;
+}
+
+/* ---------- Recordarme / olvidaste ---------- */
+.options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0.9rem 0 1.1rem;
+  font-size: 0.75rem;
+}
+
+.remember {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #5b4c3e;
+  cursor: pointer;
+}
+
+.remember input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.checkbox {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1.5px solid #cbbdae;
+  border-radius: 4px;
+  background: #fff;
+  color: transparent;
+}
+
+.checkbox svg {
+  width: 10px;
+  height: 10px;
+}
+
+.remember input:checked + .checkbox {
+  background: #b85a2e;
+  border-color: #b85a2e;
+  color: #fff;
+}
+
+.remember input:focus-visible + .checkbox {
+  box-shadow: 0 0 0 3px rgba(217, 113, 47, 0.25);
+}
+
+.link {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: #b0601f;
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.error {
+  margin: 0 0 1rem;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fdf0ea;
+  color: #a3421c;
+  font-size: 0.8rem;
+}
+
+/* ---------- Botón principal (aquí estaba el error de la flecha gigante) ---------- */
+.submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 46px;
+  border: 0;
+  border-radius: 10px;
+  background: #b85a2e;
+  color: #fff;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(184, 90, 46, 0.25);
+  transition: background 0.15s;
+}
+
+.submit:hover {
+  background: #9c4a23;
+}
+
+.submit:focus-visible {
+  outline: 3px solid rgba(184, 90, 46, 0.4);
+  outline-offset: 2px;
+}
+
+.submit-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- Recuperación ---------- */
+.recovery {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 1.25rem;
+  padding: 12px 14px;
+  border: 1px solid #e8ddd0;
+  border-radius: 10px;
+  background: #f6f1e8;
+}
+
+.recovery-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: rgba(184, 90, 46, 0.12);
+  color: #b0601f;
+}
+
+.recovery-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.recovery h3 {
+  margin: 0 0 3px;
+  font-size: 0.78rem;
+  color: #4a3b2e;
+}
+
+.recovery p {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: #8a7c6d;
+}
+
+.version {
+  margin-top: 1.1rem;
+  text-align: center;
+  font-size: 0.7rem;
+  color: #ab9c8c;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+  .login-page {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .brand-panel {
+    display: none;
+  }
+
+  .form-panel {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+
