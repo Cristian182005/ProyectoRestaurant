@@ -56,6 +56,7 @@ export class SidebarComponent {
     },
     {
       label: 'Inventario',
+      route: '/inventario',
       icon: ['M21 8l-9-5-9 5 9 5 9-5z', 'M3 8v8l9 5 9-5V8', 'M12 13v8'],
     },
     {
@@ -108,6 +109,9 @@ export class SidebarComponent {
     }
     if (this.router.url.startsWith('/pedidos')) {
       return 'Pedidos';
+    }
+    if (this.router.url.startsWith('/inventario')) {
+      return 'Inventario';
     }
     if (this.router.url.startsWith('/dashboard')) {
       return 'Resumen';
