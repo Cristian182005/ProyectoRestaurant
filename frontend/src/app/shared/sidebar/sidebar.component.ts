@@ -41,6 +41,7 @@ export class SidebarComponent {
     },
     {
       label: 'Caja y ventas',
+      route: '/caja-ventas',
       icon: [
         'M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
         'M13.5 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z',
@@ -100,6 +101,9 @@ export class SidebarComponent {
   private sectionFromUrl(): string | null {
     if (this.router.url.startsWith('/salon')) {
       return 'Salón';
+    }
+    if (this.router.url.startsWith('/caja-ventas')) {
+      return 'Caja y ventas';
     }
     if (this.router.url.startsWith('/dashboard')) {
       return 'Resumen';
