@@ -1,0 +1,21 @@
+.inventario-modal {
+  animation: inventario-modal-in 0.18s ease;
+}
+
+@keyframes inventario-modal-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inventario-modal {
+    animation: none;
+  }
+}

@@ -1,0 +1,694 @@
+<div class="min-h-screen bg-cream-100 font-sans text-ink-900">
+  <app-sidebar
+    [open]="sidebarOpen()"
+    [activeSection]="activeSection()"
+    (sectionChange)="activeSection.set($event)"
+    (close)="closeSidebar()"
+    (logout)="onLogout()"
+  />
+
+  <div class="min-h-screen side:ml-[216px]">
+    <header
+      class="flex flex-wrap items-start justify-between gap-4 px-[18px] pt-[22px] pb-1 side:px-[26px]"
+    >
+      <div class="flex min-w-0 items-center gap-3">
+        <button
+          type="button"
+          class="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] border border-cream-400 bg-[#fffdf9] text-ink-700 shadow-pill side:hidden"
+          (click)="toggleSidebar()"
+          aria-label="Abrir menú de navegación"
+        >
+          <svg
+            class="h-[17px] w-[17px]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M4 6h16" />
+            <path d="M4 12h16" />
+            <path d="M4 18h16" />
+          </svg>
+        </button>
+
+        <div class="min-w-0">
+          <h1
+            class="font-display text-[1.6rem] font-medium leading-tight tracking-[-0.01em] text-[#221a14]"
+          >
+            Inventario
+          </h1>
+          <p class="mt-1.5 text-[0.78rem] text-ink-400">
+            Existencias valorizadas - Actualización por ventas en tiempo real
+          </p>
+        </div>
+      </div>
+
+      <div class="flex shrink-0 flex-wrap items-center gap-2.5">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-full border border-cream-400 bg-[#fffdf9] px-3.5 py-2 text-[0.78rem] font-medium whitespace-nowrap text-[#3e3227] shadow-pill transition-colors hover:bg-cream-100"
+        >
+          <svg
+            class="h-3.5 w-3.5 text-ink-400"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M8 2v4" />
+            <path d="M16 2v4" />
+            <path d="M3 10h18" />
+            <path
+              d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"
+            />
+          </svg>
+          <span>{{ dateLabel }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="relative grid h-9 w-9 place-items-center rounded-full border border-cream-400 bg-[#fffdf9] text-ink-700 shadow-pill transition-colors hover:bg-cream-100"
+          aria-label="Notificaciones"
+        >
+          <svg
+            class="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+          </svg>
+          <span
+            class="absolute top-2 right-[9px] h-1.5 w-1.5 rounded-full border-[1.5px] border-[#fffdf9] bg-terra-600"
+            aria-hidden="true"
+          ></span>
+        </button>
+
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-[10px] bg-terra-600 px-4 py-2.5 text-[0.8rem] font-semibold whitespace-nowrap text-white shadow-pill transition-colors hover:bg-terra-700"
+          (click)="abrirModal()"
+        >
+          <svg
+            class="h-3.5 w-3.5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M12 5v14" />
+            <path d="M5 12h14" />
+          </svg>
+          Registrar movimiento
+        </button>
+      </div>
+    </header>
+
+    <main class="flex flex-col gap-[18px] px-[18px] pt-4 pb-8 side:px-[26px]">
+      <!-- Métricas -->
+      <section
+        class="grid grid-cols-1 gap-4 min-[620px]:grid-cols-2 min-[1180px]:grid-cols-4"
+        aria-label="Indicadores de inventario"
+      >
+        @for (kpi of kpis(); track kpi.label) {
+          <article
+            class="rounded-[14px] border border-black/[0.07] bg-cream-50 p-4 shadow-card"
+          >
+            <div class="flex items-center gap-3.5">
+              <span
+                class="grid h-10 w-10 shrink-0 place-items-center rounded-[10px]"
+                [class]="kpiTone[kpi.tone].box"
+              >
+                <svg
+                  class="h-[18px] w-[18px]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  @for (path of kpi.icon; track path) {
+                    <path [attr.d]="path" />
+                  }
+                </svg>
+              </span>
+              <div class="min-w-0">
+                <p
+                  class="font-display text-[1.5rem] leading-none font-medium tracking-[-0.01em]"
+                  [class]="kpiTone[kpi.tone].value"
+                >
+                  {{ kpi.value }}
+                </p>
+                <p class="mt-1.5 text-[0.74rem] text-ink-500">{{ kpi.label }}</p>
+              </div>
+            </div>
+          </article>
+        }
+      </section>
+
+      <!-- Filtros y acciones -->
+      <section
+        class="flex flex-wrap items-end gap-x-4 gap-y-3"
+        aria-label="Filtros de inventario"
+      >
+        <div class="min-w-[240px] flex-1">
+          <div class="relative">
+            <svg
+              class="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-ink-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Buscar insumo, categoría o código"
+              [value]="searchTerm()"
+              (input)="onSearch($event)"
+              aria-label="Buscar insumo, categoría o código"
+              class="h-[38px] w-full rounded-[10px] border border-cream-400 bg-[#fffdf9] pr-8 pl-8 text-[0.8rem] text-ink-800 outline-none transition-colors placeholder:text-ink-300 focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+            />
+            <svg
+              class="pointer-events-none absolute top-1/2 right-3 h-3.5 w-3.5 -translate-y-1/2 text-ink-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="w-[180px] max-w-full">
+          <label
+            for="inventario-categoria"
+            class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
+          >
+            Categoría
+          </label>
+          <div class="relative">
+            <select
+              id="inventario-categoria"
+              (change)="onCategoria($event)"
+              class="h-[38px] w-full appearance-none rounded-[10px] border border-cream-400 bg-[#fffdf9] pr-8 pl-3 text-[0.8rem] text-ink-800 outline-none transition-colors focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+            >
+              @for (option of categoriaOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+            <svg
+              class="pointer-events-none absolute top-1/2 right-3 h-3.5 w-3.5 -translate-y-1/2 text-ink-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="w-[160px] max-w-full">
+          <label
+            for="inventario-estado"
+            class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
+          >
+            Estado
+          </label>
+          <div class="relative">
+            <select
+              id="inventario-estado"
+              (change)="onEstado($event)"
+              class="h-[38px] w-full appearance-none rounded-[10px] border border-cream-400 bg-[#fffdf9] pr-8 pl-3 text-[0.8rem] text-ink-800 outline-none transition-colors focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+            >
+              @for (option of estadoOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+            <svg
+              class="pointer-events-none absolute top-1/2 right-3 h-3.5 w-3.5 -translate-y-1/2 text-ink-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          (click)="exportar()"
+          class="inline-flex h-[38px] items-center gap-2 rounded-[10px] border border-cream-400 bg-[#fffdf9] px-4 text-[0.8rem] font-semibold text-[#3e3227] shadow-pill transition-colors hover:bg-cream-100"
+        >
+          <svg
+            class="h-3.5 w-3.5 text-ink-500"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 3v12" />
+            <path d="m7 10 5 5 5-5" />
+            <path d="M4 21h16" />
+          </svg>
+          Exportar
+        </button>
+      </section>
+
+      <!-- Tabla + paneles laterales -->
+      <section
+        class="grid grid-cols-1 gap-4 min-[1120px]:grid-cols-[minmax(0,1fr)_300px]"
+        aria-label="Existencias e insumos críticos"
+      >
+        <div
+          class="min-w-0 overflow-hidden rounded-[14px] border border-black/[0.07] bg-cream-50 shadow-card"
+        >
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[820px] border-collapse text-left">
+              <thead class="bg-cream-200">
+                <tr
+                  class="text-[0.62rem] font-semibold tracking-[0.06em] text-ink-400 uppercase"
+                >
+                  <th scope="col" class="px-4 py-3 font-semibold">Insumo</th>
+                  <th scope="col" class="px-4 py-3 font-semibold">Categoría</th>
+                  <th scope="col" class="px-4 py-3 font-semibold">Existencia</th>
+                  <th scope="col" class="px-4 py-3 font-semibold">Unidad</th>
+                  <th scope="col" class="px-4 py-3 font-semibold">Stock mín.</th>
+                  <th scope="col" class="px-4 py-3 font-semibold">Estado</th>
+                  <th scope="col" class="px-4 py-3 font-semibold">Actualizado</th>
+                  <th scope="col" class="px-4 py-3 text-right font-semibold">
+                    <span class="sr-only">Acciones</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of filtered(); track row.codigo) {
+                  <tr class="border-t border-cream-300 transition-colors hover:bg-cream-100">
+                    <td class="px-4 py-3.5 whitespace-nowrap">
+                      <p class="text-[0.8rem] font-semibold text-ink-900">{{ row.nombre }}</p>
+                      <p class="mt-0.5 text-[0.64rem] text-ink-300">{{ row.codigo }}</p>
+                    </td>
+                    <td class="px-4 py-3.5 text-[0.78rem] whitespace-nowrap text-ink-600">
+                      {{ row.categoria }}
+                    </td>
+                    <td
+                      class="px-4 py-3.5 text-[0.85rem] font-semibold tabular-nums whitespace-nowrap"
+                      [ngClass]="row.estado === 'CRÍTICO' ? 'text-danger-600' : 'text-ink-900'"
+                    >
+                      {{ cantidadTexto(row.existencia) }} {{ row.unidad }}
+                    </td>
+                    <td class="px-4 py-3.5 text-[0.78rem] text-ink-600">{{ row.unidad }}</td>
+                    <td
+                      class="px-4 py-3.5 text-[0.78rem] tabular-nums whitespace-nowrap text-ink-600"
+                    >
+                      {{ cantidadTexto(row.stockMinimo) }} {{ row.unidad }}
+                    </td>
+                    <td class="px-4 py-3.5">
+                      <span
+                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.66rem] font-semibold whitespace-nowrap"
+                        [class]="estadoBadge[row.estado]"
+                      >
+                        <span
+                          class="h-1.5 w-1.5 rounded-full"
+                          [class]="estadoPunto[row.estado]"
+                          aria-hidden="true"
+                        ></span>
+                        {{ row.estado }}
+                      </span>
+                    </td>
+                    <td
+                      class="px-4 py-3.5 text-[0.78rem] tabular-nums whitespace-nowrap text-ink-500"
+                    >
+                      {{ row.actualizado }}
+                    </td>
+                    <td class="px-4 py-3.5 text-right">
+                      <button
+                        type="button"
+                        class="grid h-7 w-7 place-items-center rounded-lg text-ink-400 transition-colors hover:bg-cream-200 hover:text-ink-700"
+                        (click)="abrirModal(row.codigo)"
+                        [attr.aria-label]="'Acciones de ' + row.nombre"
+                      >
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <circle cx="5" cy="12" r="1.6" />
+                          <circle cx="12" cy="12" r="1.6" />
+                          <circle cx="19" cy="12" r="1.6" />
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr class="border-t border-cream-300">
+                    <td colspan="8" class="px-4 py-10 text-center text-[0.8rem] text-ink-400">
+                      No se encontraron insumos con los filtros aplicados.
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-4">
+          <!-- Insumos críticos -->
+          <section
+            class="rounded-[14px] bg-surface-dark p-[18px] text-white shadow-card"
+            aria-label="Insumos críticos"
+          >
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="font-display text-[1.05rem] font-semibold text-white">
+                Insumos críticos
+              </h2>
+              <span class="text-[0.7rem] whitespace-nowrap text-white/45">Reponer hoy</span>
+            </div>
+
+            <div class="mt-3">
+              @for (item of criticos(); track item.codigo) {
+                <div class="border-t border-white/10 py-3 first:border-t-0 first:pt-0">
+                  <div class="flex items-baseline justify-between gap-3">
+                    <span class="truncate text-[0.8rem] font-medium text-white">
+                      {{ item.nombre }}
+                    </span>
+                    <span
+                      class="shrink-0 text-[0.72rem] font-semibold tabular-nums text-[#ef8b62]"
+                    >
+                      {{ cantidadTexto(item.existencia) }} / {{ cantidadTexto(item.stockMinimo) }}
+                      {{ item.unidad }}
+                    </span>
+                  </div>
+                  <p class="mt-1 text-[0.68rem] text-white/45">Pedir {{ pedidoLabel(item) }}</p>
+                </div>
+              } @empty {
+                <p class="text-[0.74rem] text-white/50">
+                  Sin insumos críticos: todo por encima del stock mínimo.
+                </p>
+              }
+            </div>
+
+            <button
+              type="button"
+              class="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-[10px] bg-terra-600 px-4 py-3 text-[0.8rem] font-semibold text-white shadow-pill transition-colors hover:bg-terra-700"
+              (click)="crearOrdenCompra()"
+            >
+              <svg
+                class="h-4 w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="9" cy="20" r="1.5" />
+                <circle cx="18" cy="20" r="1.5" />
+                <path d="M2 3h3l2.6 12.4a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L21 7H6" />
+              </svg>
+              Crear orden de compra
+            </button>
+          </section>
+
+          <!-- Movimientos recientes -->
+          <section
+            class="rounded-[14px] border border-black/[0.07] bg-cream-50 p-[18px] shadow-card"
+            aria-label="Movimientos recientes"
+          >
+            <div class="flex items-center justify-between gap-3">
+              <h2 class="font-display text-[1.05rem] font-semibold text-ink-900">
+                Movimientos recientes
+              </h2>
+              <span class="text-[0.7rem] text-ink-300">Hoy</span>
+            </div>
+
+            <ul class="mt-2">
+              @for (mov of movimientos(); track $index) {
+                <li class="flex gap-3 border-t border-cream-300 py-2.5 first:border-t-0 first:pt-2">
+                  <span
+                    class="w-9 shrink-0 text-[0.7rem] font-semibold tabular-nums text-terra-600"
+                  >
+                    {{ mov.hora }}
+                  </span>
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate text-[0.76rem] font-semibold text-ink-900">
+                      {{ mov.insumo }}
+                    </p>
+                    <div class="mt-0.5 flex items-baseline justify-between gap-2">
+                      <span class="truncate text-[0.7rem] text-ink-400">{{ mov.detalle }}</span>
+                      <span
+                        class="shrink-0 text-[0.7rem] font-semibold tabular-nums"
+                        [ngClass]="
+                          mov.signo === 'negativo' ? 'text-terra-600' : 'text-ok-600'
+                        "
+                      >
+                        {{ mov.variacion }}
+                      </span>
+                    </div>
+                  </div>
+                </li>
+              } @empty {
+                <li class="border-t border-cream-300 py-4 text-center text-[0.76rem] text-ink-400">
+                  Sin movimientos registrados hoy.
+                </li>
+              }
+            </ul>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal de registro de movimiento -->
+  @if (modalAbierto()) {
+    <div
+      class="fixed inset-0 z-50 grid place-items-center bg-[#1c1714]/50 p-4"
+      (click)="cerrarModal()"
+      aria-hidden="true"
+    >
+      <div
+        class="inventario-modal w-full max-w-md rounded-[14px] border border-black/[0.07] bg-cream-50 p-5 shadow-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-movimiento-titulo"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h2
+              id="modal-movimiento-titulo"
+              class="font-display text-[1.2rem] font-semibold text-ink-900"
+            >
+              Registrar movimiento
+            </h2>
+            <p class="mt-1 text-[0.72rem] text-ink-400">
+              Actualiza existencias y valorización al instante.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-ink-400 transition-colors hover:bg-cream-200 hover:text-ink-700"
+            (click)="cerrarModal()"
+            aria-label="Cerrar formulario"
+          >
+            <svg
+              class="h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.9"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="mt-4 flex flex-col gap-3.5">
+          <div>
+            <label
+              for="mov-insumo"
+              class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
+            >
+              Insumo
+            </label>
+            <div class="relative">
+              <select
+                id="mov-insumo"
+                [value]="formCodigo()"
+                (change)="onFormCodigo($event)"
+                class="h-[38px] w-full appearance-none rounded-[10px] border border-cream-400 bg-white pr-8 pl-3 text-[0.8rem] text-ink-800 outline-none transition-colors focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+              >
+                @for (item of insumos(); track item.codigo) {
+                  <option [value]="item.codigo">
+                    {{ item.nombre }} ({{ item.codigo }})
+                  </option>
+                }
+              </select>
+              <svg
+                class="pointer-events-none absolute top-1/2 right-3 h-3.5 w-3.5 -translate-y-1/2 text-ink-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </div>
+          </div>
+
+          <div>
+            <label
+              for="mov-tipo"
+              class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
+            >
+              Tipo de movimiento
+            </label>
+            <div class="relative">
+              <select
+                id="mov-tipo"
+                [value]="formTipo()"
+                (change)="onFormTipo($event)"
+                class="h-[38px] w-full appearance-none rounded-[10px] border border-cream-400 bg-white pr-8 pl-3 text-[0.8rem] text-ink-800 outline-none transition-colors focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+              >
+                @for (option of tipoOptions; track option.value) {
+                  <option [value]="option.value">{{ option.label }}</option>
+                }
+              </select>
+              <svg
+                class="pointer-events-none absolute top-1/2 right-3 h-3.5 w-3.5 -translate-y-1/2 text-ink-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-3.5 min-[420px]:grid-cols-2">
+            <div>
+              <label
+                for="mov-cantidad"
+                class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
+              >
+                Cantidad
+              </label>
+              <input
+                id="mov-cantidad"
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder="0.00"
+                [value]="formCantidad()"
+                (input)="onFormCantidad($event)"
+                class="h-[38px] w-full rounded-[10px] border border-cream-400 bg-white px-3 text-[0.8rem] tabular-nums text-ink-800 outline-none transition-colors placeholder:text-ink-300 focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+              />
+            </div>
+            <div>
+              <label
+                for="mov-motivo"
+                class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
+              >
+                Motivo
+              </label>
+              <input
+                id="mov-motivo"
+                type="text"
+                placeholder="Venta C-1048"
+                [value]="formMotivo()"
+                (input)="onFormMotivo($event)"
+                class="h-[38px] w-full rounded-[10px] border border-cream-400 bg-white px-3 text-[0.8rem] text-ink-800 outline-none transition-colors placeholder:text-ink-300 focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+              />
+            </div>
+          </div>
+
+          @if (formError()) {
+            <p class="rounded-[10px] border border-danger-600/40 bg-danger-100 px-3 py-2 text-[0.74rem] text-danger-700">
+              {{ formError() }}
+            </p>
+          }
+        </div>
+
+        <div class="mt-5 flex items-center justify-end gap-2.5 border-t border-cream-300 pt-4">
+          <button
+            type="button"
+            class="h-[38px] rounded-[10px] border border-cream-400 bg-white px-4 text-[0.8rem] font-semibold text-[#3e3227] shadow-pill transition-colors hover:bg-cream-100"
+            (click)="cerrarModal()"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="inline-flex h-[38px] items-center gap-2 rounded-[10px] bg-terra-600 px-4 text-[0.8rem] font-semibold text-white shadow-pill transition-colors hover:bg-terra-700"
+            (click)="registrarMovimiento()"
+          >
+            <svg
+              class="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path d="M12 5v14" />
+              <path d="M5 12h14" />
+            </svg>
+            Registrar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Aviso flotante -->
+  @if (aviso()) {
+    <div
+      class="fixed right-5 bottom-5 z-50 max-w-[min(360px,90vw)] rounded-[10px] bg-surface-dark px-4 py-3 text-[0.78rem] font-medium text-white shadow-card"
+      role="status"
+    >
+      {{ aviso() }}
+    </div>
+  }
+</div>
