@@ -114,7 +114,7 @@ public abstract class BasePruebaIntegracion {
 	@BeforeAll
 	static void crearBaseDeDatosDePruebaSiNoExiste() throws Exception {
 		try (Connection conexion = DriverManager.getConnection(
-				"jdbc:postgresql://localhost:5432/postgres", "postgres", "1234");
+				"jdbc:postgresql://localhost:5432/postgres", "postgres", "root");
 				Statement sentencia = conexion.createStatement()) {
 			// PostgreSQL guarda los nombres de base de datos en minusculas
 			ResultSet resultado = sentencia.executeQuery(

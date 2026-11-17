@@ -1,5 +1,6 @@
 package com.elhornero.backend.controller;
 
+import com.elhornero.backend.dto.DisponibilidadRequest;
 import com.elhornero.backend.dto.PlatoRequest;
 import com.elhornero.backend.entity.Plato;
 import com.elhornero.backend.service.PlatoService;
@@ -52,6 +53,13 @@ public class PlatoController {
 	public ResponseEntity<Plato> actualizar(@PathVariable Integer id,
 			@RequestBody PlatoRequest request) {
 		return ResponseEntity.ok(platoService.actualizar(id, request));
+	}
+
+	@PutMapping("/{id:\\d+}/disponibilidad")
+	public ResponseEntity<Plato> cambiarDisponibilidad(@PathVariable Integer id,
+			@RequestBody DisponibilidadRequest request) {
+		return ResponseEntity.ok(
+				platoService.cambiarDisponibilidad(id, request == null ? null : request.activo()));
 	}
 
 	@DeleteMapping("/{id:\\d+}")

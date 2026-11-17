@@ -4,6 +4,7 @@ import com.elhornero.backend.entity.Plato;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -18,6 +19,12 @@ public interface PlatoRepository extends JpaRepository<Plato, Integer> {
 	boolean existsByCategoriaIgnoreCase(String categoria);
 
 	boolean existsByNombreIgnoreCase(String nombre);
+
+	long countByCategoriaIgnoreCase(String categoria);
+
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query("update Plato p set p.categoria = :nueva where lower(p.categoria) = lower(:vieja)")
+	int actualizarCategoria(@Param("vieja") String vieja, @Param("nueva") String nueva);
 
 	@Query("select distinct p.categoria from Plato p where p.categoria is not null order by p.categoria")
 	List<String> listarCategoriasDistinct();

@@ -127,6 +127,59 @@ class PlatoCategoriaCrudTest extends BasePruebaIntegracion {
 	}
 
 	@Test
+	void actualizarPlatoRechazaNombresDuplicados() throws Exception {
+		crearPlato("Plato Original", "Platos", 20.0, true);
+		int otroId = crearPlato("Plato Duplicado", "Platos", 15.0, true);
+
+		// el nombre ya pertenece a otro plato
+		mockMvc.perform(put("/api/platos/" + otroId).contentType(MediaType.APPLICATION_JSON)
+				.content(cuerpoPlato("plato original", "Platos", 15.0, true)))
+				.andExpect(status().isConflict()).andExpect(jsonPath("$.mensaje")
+						.value("Ya existe otro plato con el nombre 'plato original'"));
+
+		// conservar el propio nombre si sigue disponible
+		mockMvc.perform(put("/api/platos/" + otroId).contentType(MediaType.APPLICATION_JSON)
+				.content(cuerpoPlato("Plato Duplicado", "Platos", 16.0, true)))
+				.andExpect(status().isOk()).andExpect(jsonPath("$.precio").value(16.0));
+
+		assertThat(platoRepository.findById(otroId)).hasValueSatisfying(plato -> {
+			assertThat(plato.getNombre()).isEqualTo("Plato Duplicado");
+			assertThat(plato.getPrecio()).isEqualTo(16.0);
+		});
+		assertThat(platoRepository.count()).isEqualTo(2);
+	}
+
+	@Test
+	void actualizarPlatoRechazaDatosInvalidosSinTocarLaBase() throws Exception {
+		int id = crearPlato("Plato Actualizable", "Platos", 22.0, true);
+
+		mockMvc.perform(put("/api/platos/" + id).contentType(MediaType.APPLICATION_JSON)
+				.content("{\"nombre\":\"\",\"categoria\":\"Platos\",\"precio\":10}"))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("El nombre del plato es obligatorio"));
+		mockMvc.perform(put("/api/platos/" + id).contentType(MediaType.APPLICATION_JSON)
+				.content(cuerpoPlato("Plato Actualizable", "Platos", 0, true)))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("El precio del plato debe ser mayor a 0"));
+		mockMvc.perform(put("/api/platos/" + id).contentType(MediaType.APPLICATION_JSON)
+				.content(cuerpoPlato("Plato Actualizable", "Platos", 10, true).replace(
+						"plato.png", "x".repeat(256))))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("La imagen del plato no puede superar 255 caracteres"));
+		mockMvc.perform(put("/api/platos/" + id).contentType(MediaType.APPLICATION_JSON)
+				.content("{\"nombre\":\"Plato Actualizable\",\"categoria\":\"\",\"precio\":10}"))
+				.andExpect(status().isBadRequest()).andExpect(jsonPath("$.mensaje")
+						.value("La categoría del plato es obligatoria"));
+
+		// ningun cambio llego a PostgreSQL
+		assertThat(platoRepository.findById(id)).hasValueSatisfying(plato -> {
+			assertThat(plato.getNombre()).isEqualTo("Plato Actualizable");
+			assertThat(plato.getPrecio()).isEqualTo(22.0);
+			assertThat(plato.getCategoria()).isEqualTo("Platos");
+		});
+	}
+
+	@Test
 	void noPermiteEliminarPlatoQueTienePedidos() throws Exception {
 		int platoId = crearPlato("Plato con pedido", "Platos", 20.0, true);
 		int mesaId = crearMesa(90);
