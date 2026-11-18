@@ -7,6 +7,7 @@ import com.elhornero.backend.entity.Usuario;
 import com.elhornero.backend.exception.DatoInvalidoException;
 import com.elhornero.backend.exception.OperacionNoPermitidaException;
 import com.elhornero.backend.repository.UsuarioRepository;
+import com.elhornero.backend.security.RolUsuario;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import org.springframework.beans.factory.ObjectProvider;
@@ -55,12 +56,19 @@ public class UsuarioService {
 			throw new OperacionNoPermitidaException(
 					"Ya existe un usuario con el correo '" + email + "'");
 		}
+		// El registro publico solo admite roles de operacion; los
+		// administradores se crean por otro medio.
+		RolUsuario rol = RolUsuario.desde(request.rol());
+		if (rol == RolUsuario.ADMINISTRADOR) {
+			throw new DatoInvalidoException(
+					"No se puede registrar un usuario con rol ADMINISTRADOR");
+		}
 
 		Persona persona = new Persona();
 		persona.setEmail(email);
 		persona.setTelefono(normalizar(request.telefono()));
 		persona.setDireccion(normalizar(request.direccion()));
-		persona.setRol(normalizar(request.rol()));
+		persona.setRol(rol.name());
 
 		Usuario usuario = new Usuario();
 		usuario.setPersona(persona);

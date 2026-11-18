@@ -23,8 +23,10 @@ import com.elhornero.backend.repository.InsumoRepository;
 import com.elhornero.backend.repository.MermaRepository;
 import com.elhornero.backend.repository.MesaRepository;
 import com.elhornero.backend.repository.PedidoRepository;
+import com.elhornero.backend.repository.PersonaRepository;
 import com.elhornero.backend.repository.PlatoRepository;
 import com.elhornero.backend.repository.ProveedorRepository;
+import com.elhornero.backend.repository.UsuarioRepository;
 import com.jayway.jsonpath.JsonPath;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -111,10 +113,16 @@ public abstract class BasePruebaIntegracion {
 	@Autowired
 	protected MermaRepository mermaRepository;
 
+	@Autowired
+	protected UsuarioRepository usuarioRepository;
+
+	@Autowired
+	protected PersonaRepository personaRepository;
+
 	@BeforeAll
 	static void crearBaseDeDatosDePruebaSiNoExiste() throws Exception {
 		try (Connection conexion = DriverManager.getConnection(
-				"jdbc:postgresql://localhost:5432/postgres", "postgres", "root");
+				"jdbc:postgresql://localhost:5432/postgres", "postgres", "123456");
 				Statement sentencia = conexion.createStatement()) {
 			// PostgreSQL guarda los nombres de base de datos en minusculas
 			ResultSet resultado = sentencia.executeQuery(
@@ -135,6 +143,12 @@ public abstract class BasePruebaIntegracion {
 
 	@AfterEach
 	void limpiarDatosDePrueba() {
+		// Borrado en lote: deleteAll() cargaria Persona y Usuario en la misma
+		// sesion y Hibernate rechazaria el flush (CHECK_ON_FLUSH) porque la
+		// asociacion inversa Persona.usuario quedaria apuntando a una entidad
+		// removida. El JPQL masivo no carga entidades ni dispara ese control.
+		usuarioRepository.deleteAllInBatch();
+		personaRepository.deleteAllInBatch();
 		facturaRepository.deleteAll();
 		boletaRepository.deleteAll();
 		comprobanteRepository.deleteAll();

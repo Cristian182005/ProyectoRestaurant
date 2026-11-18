@@ -47,6 +47,12 @@ public class GlobalExceptionHandler {
 		return responder(HttpStatus.CONFLICT, ex.getMessage(), request);
 	}
 
+	@ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
+	public ResponseEntity<ApiError> manejarCredencialesInvalidas(Exception ex,
+			HttpServletRequest request) {
+		return responder(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+	}
+
 	@ExceptionHandler(DataIntegrityViolationException.class)
 	public ResponseEntity<ApiError> manejarIntegridad(DataIntegrityViolationException ex,
 			HttpServletRequest request) {
