@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { SesionService } from '../../core/sesion.service';
 
 interface NavItem {
   label: string;
@@ -15,6 +16,7 @@ interface NavItem {
 })
 export class SidebarComponent {
   private readonly router = inject(Router);
+  readonly sesion = inject(SesionService);
 
   @Input() activeSection = 'Resumen';
   @Input() open = false;
@@ -66,6 +68,7 @@ export class SidebarComponent {
     },
     {
       label: 'Productos y recetas',
+      route: '/productos-recetas',
       icon: [
         'M3 2v7a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V2',
         'M7 2v20',
@@ -73,7 +76,11 @@ export class SidebarComponent {
         'M21 15v7',
       ],
     },
-    { label: 'Reportes', icon: ['M3 3v18h18', 'M18 17V9', 'M13 17V6', 'M8 17v-3'] },
+    {
+      label: 'Reportes',
+      route: '/reportes',
+      icon: ['M3 3v18h18', 'M18 17V9', 'M13 17V6', 'M8 17v-3'],
+    },
     {
       label: 'Usuarios y roles',
       route: '/usuarios-roles',
@@ -106,6 +113,13 @@ export class SidebarComponent {
     }
   }
 
+  /** Cierra la sesión (limpia el JWT) y notifica a la página para navegar al login. */
+  selectLogout(): void {
+    this.sesion.cerrarSesion();
+    this.close.emit();
+    this.logout.emit();
+  }
+
   private sectionFromUrl(): string | null {
     if (this.router.url.startsWith('/salon')) {
       return 'Salón';
@@ -118,6 +132,12 @@ export class SidebarComponent {
     }
     if (this.router.url.startsWith('/inventario')) {
       return 'Inventario';
+    }
+    if (this.router.url.startsWith('/productos-recetas')) {
+      return 'Productos y recetas';
+    }
+    if (this.router.url.startsWith('/reportes')) {
+      return 'Reportes';
     }
     if (this.router.url.startsWith('/usuarios-roles')) {
       return 'Usuarios y roles';

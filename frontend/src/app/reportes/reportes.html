@@ -1,0 +1,481 @@
+<div class="min-h-screen bg-cream-100 font-sans text-ink-900">
+  <app-sidebar
+    [open]="sidebarOpen()"
+    [activeSection]="activeSection()"
+    (sectionChange)="activeSection.set($event)"
+    (close)="closeSidebar()"
+    (logout)="onLogout()"
+  />
+
+  <div class="min-h-screen side:ml-[216px]">
+    <header
+      class="flex flex-wrap items-start justify-between gap-4 px-[18px] pt-[22px] pb-1 side:px-[26px]"
+    >
+      <div class="flex min-w-0 items-center gap-3">
+        <button
+          type="button"
+          class="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] border border-cream-400 bg-[#fffdf9] text-ink-700 shadow-pill side:hidden"
+          (click)="toggleSidebar()"
+          aria-label="Abrir menú de navegación"
+        >
+          <svg
+            class="h-[17px] w-[17px]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
+            <path d="M4 6h16" />
+            <path d="M4 12h16" />
+            <path d="M4 18h16" />
+          </svg>
+        </button>
+
+        <div class="min-w-0">
+          <h1
+            class="font-display text-[1.6rem] font-medium leading-tight tracking-[-0.01em] text-[#221a14]"
+          >
+            Reportes
+          </h1>
+          <p class="mt-1.5 text-[0.78rem] text-ink-400">
+            Ventas y rentabilidad · Datos consolidados al {{ resumenFecha() }}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex shrink-0 flex-wrap items-center gap-2.5">
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-full border border-cream-400 bg-[#fffdf9] px-3.5 py-2 text-[0.78rem] font-medium whitespace-nowrap text-[#3e3227] shadow-pill transition-colors hover:bg-cream-100"
+        >
+          <svg
+            class="h-3.5 w-3.5 text-ink-400"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M8 2v4" />
+            <path d="M16 2v4" />
+            <path d="M3 10h18" />
+            <path
+              d="M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"
+            />
+          </svg>
+          <span>{{ dateLabel }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="relative grid h-9 w-9 place-items-center rounded-full border border-cream-400 bg-[#fffdf9] text-ink-700 shadow-pill transition-colors hover:bg-cream-100"
+          aria-label="Notificaciones"
+        >
+          <svg
+            class="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+          </svg>
+          <span
+            class="absolute top-2 right-[9px] h-1.5 w-1.5 rounded-full border-[1.5px] border-[#fffdf9] bg-terra-600"
+            aria-hidden="true"
+          ></span>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex flex-col gap-[18px] px-[18px] pt-4 pb-8 side:px-[26px]">
+      <!-- Filtros -->
+      <section
+        class="rounded-[14px] border border-black/[0.07] bg-cream-50 p-[18px] shadow-card"
+        aria-label="Filtros del reporte"
+      >
+        <div class="flex flex-wrap items-end gap-x-4 gap-y-3.5">
+          <div class="w-[168px] max-w-full">
+            <label for="rep-desde" class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700">
+              Desde
+            </label>
+            <div class="relative">
+              <input
+                id="rep-desde"
+                type="date"
+                [value]="desde()"
+                (change)="onDesde($event)"
+                class="h-[42px] w-full rounded-[10px] border border-cream-400 bg-white px-3 pr-8 text-[0.8rem] text-ink-800 outline-none transition-colors focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+              />
+            </div>
+          </div>
+
+          <div class="w-[168px] max-w-full">
+            <label for="rep-hasta" class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700">
+              Hasta
+            </label>
+            <div class="relative">
+              <input
+                id="rep-hasta"
+                type="date"
+                [value]="hasta()"
+                (change)="onHasta($event)"
+                class="h-[42px] w-full rounded-[10px] border border-cream-400 bg-white px-3 pr-8 text-[0.8rem] text-ink-800 outline-none transition-colors focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+              />
+            </div>
+          </div>
+
+          <div class="w-[196px] max-w-full">
+            <label
+              for="rep-sucursal"
+              class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
+            >
+              Sucursal
+            </label>
+            <div class="relative">
+              <select
+                id="rep-sucursal"
+                [value]="sucursal()"
+                (change)="onSucursal($event)"
+                class="h-[42px] w-full appearance-none rounded-[10px] border border-cream-400 bg-white pr-8 pl-3 text-[0.8rem] text-ink-800 outline-none transition-colors focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+              >
+                @for (item of sucursales; track item) {
+                  <option [value]="item">{{ item }}</option>
+                }
+              </select>
+              <svg
+                class="pointer-events-none absolute top-1/2 right-3 h-3.5 w-3.5 -translate-y-1/2 text-ink-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </div>
+          </div>
+
+          <div class="w-[176px] max-w-full">
+            <label for="rep-turno" class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700">
+              Turno
+            </label>
+            <div class="relative">
+              <select
+                id="rep-turno"
+                [value]="turno()"
+                (change)="onTurno($event)"
+                class="h-[42px] w-full appearance-none rounded-[10px] border border-cream-400 bg-white pr-8 pl-3 text-[0.8rem] text-ink-800 outline-none transition-colors focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+              >
+                @for (item of turnos; track item) {
+                  <option [value]="item">{{ item }}</option>
+                }
+              </select>
+              <svg
+                class="pointer-events-none absolute top-1/2 right-3 h-3.5 w-3.5 -translate-y-1/2 text-ink-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              class="h-[42px] rounded-[10px] bg-terra-600 px-5 text-[0.8rem] font-semibold text-white shadow-pill transition-colors hover:bg-terra-700"
+              (click)="aplicar()"
+            >
+              Aplicar
+            </button>
+
+            <button
+              type="button"
+              class="inline-flex h-[42px] items-center gap-2 rounded-[10px] border border-cream-400 bg-[#fffdf9] px-4 text-[0.8rem] font-semibold text-[#3e3227] shadow-pill transition-colors hover:bg-cream-100"
+              (click)="exportarPdf()"
+            >
+              <svg
+                class="h-3.5 w-3.5 text-ink-500"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+                <path d="M14 2v6h6" />
+                <path d="M9 15h6" />
+                <path d="M9 18h4" />
+              </svg>
+              Exportar PDF
+            </button>
+
+            <button
+              type="button"
+              class="inline-flex h-[42px] items-center gap-2 rounded-[10px] border border-cream-400 bg-[#fffdf9] px-4 text-[0.8rem] font-semibold text-[#3e3227] shadow-pill transition-colors hover:bg-cream-100"
+              (click)="exportarExcel()"
+            >
+              <svg
+                class="h-3.5 w-3.5 text-ink-500"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M3 9h18" />
+                <path d="M9 3v18" />
+              </svg>
+              Excel
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- KPIs -->
+      <section
+        class="grid grid-cols-1 gap-4 min-[620px]:grid-cols-2 min-[1180px]:grid-cols-4"
+        aria-label="Indicadores de ventas"
+      >
+        @for (kpi of kpis(); track kpi.label) {
+          <article class="rounded-[14px] border border-black/[0.07] bg-cream-50 p-4 shadow-card">
+            <p class="text-[0.72rem] font-medium text-ink-400">{{ kpi.label }}</p>
+            <p class="mt-2 font-display text-[1.7rem] leading-none font-medium tracking-[-0.01em] text-[#221a14]">
+              {{ kpi.value }}
+            </p>
+            <p class="mt-2.5 text-[0.7rem] text-ink-400">{{ kpi.detail }}</p>
+          </article>
+        }
+      </section>
+
+      <!-- Gráficos -->
+      <section
+        class="grid grid-cols-1 gap-4 min-[900px]:grid-cols-2 min-[1280px]:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,0.85fr)]"
+        aria-label="Gráficos de ventas"
+      >
+        <!-- Ventas por hora -->
+        <article
+          class="rounded-[14px] border border-black/[0.07] bg-cream-50 p-[18px] shadow-card"
+          aria-label="Ventas por hora"
+        >
+          <div class="flex items-baseline justify-between gap-3">
+            <h2 class="font-display text-[1.05rem] font-semibold text-ink-900">
+              Ventas por hora
+            </h2>
+            <span class="text-[0.7rem] whitespace-nowrap text-ink-400">
+              Pico: {{ pico().hora }} · {{ money(pico().valor) }}
+            </span>
+          </div>
+
+          <div class="mt-5 flex h-[180px] items-end gap-1.5 min-[560px]:gap-2.5">
+            @for (hora of horas(); track hora.label) {
+              <div class="flex h-full min-w-0 flex-1 flex-col justify-end gap-1.5">
+                <div class="flex flex-1 items-end">
+                  <div
+                    class="w-full rounded-t-[6px] transition-all"
+                    [class]="hora.valor === maxHora() ? 'bg-terra-600' : 'bg-cream-300'"
+                    [style.height.%]="altBarras(hora.valor)"
+                    [attr.title]="hora.hora + ' · ' + money(hora.valor)"
+                  ></div>
+                </div>
+                <span
+                  class="text-center text-[0.62rem] whitespace-nowrap text-ink-400"
+                >
+                  {{ hora.label }}
+                </span>
+              </div>
+            }
+          </div>
+        </article>
+
+        <!-- Rentabilidad del día -->
+        <article
+          class="rounded-[14px] bg-surface-dark p-[18px] text-white shadow-card"
+          aria-label="Rentabilidad del día"
+        >
+          <div class="flex items-baseline justify-between gap-3">
+            <h2 class="font-display text-[1.05rem] font-semibold text-white">
+              Rentabilidad del día
+            </h2>
+            <span class="text-[0.72rem] font-semibold whitespace-nowrap text-white/55">
+              {{ margenPct().toFixed(1) }}%
+            </span>
+          </div>
+
+          <div class="mt-4 h-3 w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              class="h-full rounded-full bg-terra-600 transition-all"
+              [style.width.%]="margenPct()"
+            ></div>
+          </div>
+
+          <div class="mt-4 flex flex-col gap-3">
+            <div class="flex items-baseline justify-between gap-3">
+              <span class="text-[0.78rem] text-white/70">Ventas netas</span>
+              <span class="text-[0.85rem] font-semibold tabular-nums text-white">
+                {{ money(ventasNetas()) }}
+              </span>
+            </div>
+            <div class="flex items-baseline justify-between gap-3">
+              <span class="text-[0.78rem] text-white/70">Costo de insumos</span>
+              <span class="text-[0.85rem] font-semibold tabular-nums text-[#ef8b62]">
+                − {{ money(costoInsumos()) }}
+              </span>
+            </div>
+            <div class="flex items-baseline justify-between gap-3">
+              <span class="text-[0.78rem] text-white/70">Utilidad bruta</span>
+              <span class="text-[0.85rem] font-semibold tabular-nums text-white">
+                {{ money(utilidadBruta()) }}
+              </span>
+            </div>
+            <div class="flex items-baseline justify-between gap-3">
+              <span class="text-[0.78rem] text-white/70">Descuentos</span>
+              <span class="text-[0.85rem] font-semibold tabular-nums text-white/80">
+                {{ money(descuentos()) }}
+              </span>
+            </div>
+          </div>
+
+          <p class="mt-5 border-t border-white/10 pt-3.5 text-[0.7rem] leading-relaxed text-white/45">
+            La rentabilidad excluye costos fijos y gastos administrativos.
+          </p>
+        </article>
+
+        <!-- Métodos de pago -->
+        <article
+          class="rounded-[14px] border border-black/[0.07] bg-cream-50 p-[18px] shadow-card"
+          aria-label="Métodos de pago"
+        >
+          <div class="flex items-baseline justify-between gap-3">
+            <h2 class="font-display text-[1.05rem] font-semibold text-ink-900">
+              Métodos de pago
+            </h2>
+            <span class="text-[0.7rem] whitespace-nowrap text-ink-400">
+              {{ comprobantes() }} ventas
+            </span>
+          </div>
+
+          <div class="mt-4 flex flex-col gap-3.5">
+            @for (metodo of metodos(); track metodo.nombre) {
+              <div>
+                <div class="flex items-baseline justify-between gap-3">
+                  <span class="text-[0.78rem] font-semibold text-ink-800">{{ metodo.nombre }}</span>
+                  <span class="text-[0.72rem] tabular-nums whitespace-nowrap text-ink-500">
+                    {{ montoMetodo(metodo) }} · {{ metodo.pct.toFixed(1) }}%
+                  </span>
+                </div>
+                <div class="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-cream-200">
+                  <div
+                    class="h-full rounded-full"
+                    [class]="metodo.color"
+                    [style.width.%]="metodo.pct"
+                  ></div>
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="mt-5 grid grid-cols-2 gap-3">
+            <div class="rounded-[10px] bg-cream-200 px-3 py-3">
+              <p class="font-display text-[1.25rem] leading-none font-medium text-[#221a14]">
+                {{ boletas() }}
+              </p>
+              <p class="mt-1.5 text-[0.7rem] text-ink-500">Boletas</p>
+            </div>
+            <div class="rounded-[10px] bg-cream-200 px-3 py-3">
+              <p class="font-display text-[1.25rem] leading-none font-medium text-[#221a14]">
+                {{ facturas() }}
+              </p>
+              <p class="mt-1.5 text-[0.7rem] text-ink-500">Facturas</p>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- Tabla de platos -->
+      <section
+        class="min-w-0 overflow-hidden rounded-[14px] border border-black/[0.07] bg-cream-50 shadow-card"
+        aria-label="Platos más vendidos y rentabilidad"
+      >
+        <div
+          class="flex flex-wrap items-baseline justify-between gap-3 px-4 pt-4 pb-3"
+        >
+          <h2 class="font-display text-[1.05rem] font-semibold text-ink-900">
+            Platos más vendidos y rentabilidad
+          </h2>
+          <span class="text-[0.7rem] text-ink-400">Ordenado por venta neta</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[760px] border-collapse text-left">
+            <thead class="bg-cream-200">
+              <tr class="text-[0.62rem] font-semibold tracking-[0.06em] text-ink-400 uppercase">
+                <th scope="col" class="px-4 py-3 font-semibold">#</th>
+                <th scope="col" class="px-4 py-3 font-semibold">Plato</th>
+                <th scope="col" class="px-4 py-3 text-right font-semibold">Unidades</th>
+                <th scope="col" class="px-4 py-3 text-right font-semibold">Venta neta</th>
+                <th scope="col" class="px-4 py-3 text-right font-semibold">Costo</th>
+                <th scope="col" class="px-4 py-3 text-right font-semibold">Margen</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (plato of topPlatos(); track plato.id; let i = $index) {
+                <tr class="border-t border-cream-300 transition-colors hover:bg-cream-100">
+                  <td class="px-4 py-3.5 font-display text-[0.85rem] font-semibold text-terra-600">
+                    {{ indexPlato(i) }}
+                  </td>
+                  <td class="px-4 py-3.5 text-[0.82rem] font-semibold whitespace-nowrap text-ink-900">
+                    {{ plato.nombre }}
+                  </td>
+                  <td class="px-4 py-3.5 text-right text-[0.8rem] tabular-nums text-ink-600">
+                    {{ plato.unidades }}
+                  </td>
+                  <td class="px-4 py-3.5 text-right text-[0.82rem] font-semibold tabular-nums text-ink-900">
+                    {{ money(plato.venta) }}
+                  </td>
+                  <td class="px-4 py-3.5 text-right text-[0.8rem] tabular-nums text-ink-600">
+                    {{ money(plato.costo) }}
+                  </td>
+                  <td class="px-4 py-3.5 text-right text-[0.82rem] font-bold tabular-nums text-ok-600">
+                    {{ plato.margen.toFixed(1) }}%
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Aviso flotante -->
+  @if (aviso()) {
+    <div
+      class="fixed right-5 bottom-5 z-50 max-w-[min(360px,90vw)] rounded-[10px] bg-surface-dark px-4 py-3 text-[0.78rem] font-medium text-white shadow-card"
+      role="status"
+    >
+      {{ aviso() }}
+    </div>
+  }
+</div>

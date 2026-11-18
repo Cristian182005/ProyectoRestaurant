@@ -38,13 +38,15 @@
   <div class="profile">
     <span class="avatar" aria-hidden="true"></span>
     <div class="profile-text">
-      <span class="profile-name">Lucía Mendoza</span>
-      <span class="profile-role">ADMINISTRADOR</span>
+      <span class="profile-name" [attr.title]="sesion.email() ?? ''">
+        {{ sesion.email() ?? 'Sin sesión' }}
+      </span>
+      <span class="profile-role">{{ sesion.rol() ?? '' }}</span>
     </div>
     <button
       type="button"
       class="logout"
-      (click)="logout.emit()"
+      (click)="selectLogout()"
       aria-label="Cerrar sesión"
       title="Cerrar sesión"
     >

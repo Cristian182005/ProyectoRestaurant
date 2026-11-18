@@ -46,12 +46,12 @@
     <div class="login-card">
       <header class="card-header">
         <h2>Bienvenido</h2>
-        <p>Ingresa con tus credenciales asignadas por el administrador.</p>
+        <p>Ingresa con tu correo electrónico y contraseña.</p>
       </header>
 
       <form (ngSubmit)="onSubmit()" novalidate>
         <div class="field">
-          <label for="username">Correo o usuario</label>
+          <label for="email">Correo electrónico</label>
           <div class="input-wrap">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -63,12 +63,12 @@
               />
             </svg>
             <input
-              id="username"
-              name="username"
-              type="text"
-              autocomplete="username"
-              placeholder="lucia.mendoza"
-              [(ngModel)]="username"
+              id="email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              placeholder="nombre@elhornero.pe"
+              [(ngModel)]="email"
             />
             <span class="chevron" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -152,7 +152,11 @@
           <p class="error" role="alert">{{ errorMessage() }}</p>
         }
 
-        <button class="submit" type="submit">
+        @if (aviso()) {
+          <p class="notice" role="status">{{ aviso() }}</p>
+        }
+
+        <button class="submit" type="submit" [disabled]="cargando()">
           <svg class="submit-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path
               d="M5 12h14m-6-6 6 6-6 6"
@@ -163,9 +167,14 @@
               stroke-linejoin="round"
             />
           </svg>
-          <span>Ingresar al sistema</span>
+          <span>{{ cargando() ? 'Ingresando…' : 'Ingresar al sistema' }}</span>
         </button>
       </form>
+
+      <p class="register-line">
+        ¿No tienes cuenta?
+        <button class="link" type="button" (click)="irARegistro()">Regístrate aquí</button>
+      </p>
 
       <section class="recovery">
         <div>
