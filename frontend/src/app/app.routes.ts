@@ -5,6 +5,7 @@ import { SalonComponent } from './salon/salon.component';
 import { CajaVentas } from './caja-ventas/caja-ventas';
 import { Pedidos } from './pedidos/pedidos';
 import { Inventario } from './inventario/inventario';
+import { UsuariosRoles } from './usuarios-roles/usuarios-roles';
 
 export const routes: Routes = [
   { path: '', component: Login, title: 'Inicio de sesión | El Hornero' },
@@ -32,6 +33,11 @@ export const routes: Routes = [
     path: 'inventario',
     component: Inventario,
     title: 'Inventario | El Hornero',
+  },
+  {
+    path: 'usuarios-roles',
+    component: UsuariosRoles,
+    title: 'Usuarios y roles | El Hornero',
   },
   { path: 'admin', redirectTo: 'dashboard', pathMatch: 'full' },
   { path: '**', redirectTo: '' },
