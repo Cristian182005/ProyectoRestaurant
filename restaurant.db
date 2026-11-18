@@ -2,7 +2,7 @@ CREATE TABLE persona (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     telefono VARCHAR(20),
     direccion VARCHAR(255),
-    email VARCHAR(150),
+    email VARCHAR(150) UNIQUE,
     rol VARCHAR(50)
 );
 

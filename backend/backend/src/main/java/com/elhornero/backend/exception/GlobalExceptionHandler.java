@@ -9,7 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.ErrorResponse;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -27,6 +29,17 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ApiError> manejarRecursoNoEncontrado(
 			RecursoNoEncontradoException ex, HttpServletRequest request) {
 		return responder(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+	}
+
+	@ExceptionHandler(MethodArgumentNotValidException.class)
+	public ResponseEntity<ApiError> manejarValidacion(MethodArgumentNotValidException ex,
+			HttpServletRequest request) {
+		String mensaje = ex.getBindingResult().getFieldErrors().stream().map(FieldError::getDefaultMessage)
+				.distinct().collect(java.util.stream.Collectors.joining("; "));
+		if (mensaje.isBlank()) {
+			mensaje = "Los datos enviados no son validos";
+		}
+		return responder(HttpStatus.BAD_REQUEST, mensaje, request);
 	}
 
 	@ExceptionHandler(DatoInvalidoException.class)
@@ -56,6 +69,12 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(DataIntegrityViolationException.class)
 	public ResponseEntity<ApiError> manejarIntegridad(DataIntegrityViolationException ex,
 			HttpServletRequest request) {
+		Throwable causa = ex.getMostSpecificCause();
+		String detalle = causa != null && causa.getMessage() != null ? causa.getMessage() : "";
+		if (detalle.contains("persona_email") || detalle.contains("email_key")
+				|| (detalle.contains("duplicate key") && detalle.contains("email"))) {
+			return responder(HttpStatus.CONFLICT, "Ya existe un usuario con ese correo", request);
+		}
 		return responder(HttpStatus.CONFLICT,
 				"No se puede completar la operacion porque el registro esta relacionado con otros datos",
 				request);

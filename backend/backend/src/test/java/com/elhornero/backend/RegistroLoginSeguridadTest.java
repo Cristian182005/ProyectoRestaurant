@@ -78,7 +78,65 @@ class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
 	void registrarSinPasswordEsRechazadoPorValidacion() throws Exception {
 		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
 				.content("{\"email\":\"sin.password@elhornero.pe\",\"rol\":\"MOZO\"}"))
-				.andExpect(status().isBadRequest());
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.mensaje").value("La contrasena es obligatoria"));
+	}
+
+	@Test
+	void registrarConCorreoDuplicadoDevuelve409() throws Exception {
+		registrar("duplicado@elhornero.pe", "MOZO");
+
+		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
+				.content(cuerpoRegistro("duplicado@elhornero.pe", "CAJERO")))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.mensaje")
+						.value("Ya existe un usuario con el correo 'duplicado@elhornero.pe'"));
+	}
+
+	@Test
+	void registrarConCorreoDuplicadoIgnoraMayusculas() throws Exception {
+		registrar("Dup.Test@elhornero.pe", "MOZO");
+
+		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
+				.content(cuerpoRegistro("dup.test@elhornero.pe", "MOZO")))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.mensaje")
+						.value("Ya existe un usuario con el correo 'dup.test@elhornero.pe'"));
+	}
+
+	@Test
+	void registrarConCorreoInvalidoDevuelve400() throws Exception {
+		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
+				.content(cuerpoRegistro("no-es-un-correo", "MOZO")))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.mensaje").value("El correo no tiene un formato valido"));
+	}
+
+	@Test
+	void registrarConPasswordCortaDevuelve400() throws Exception {
+		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"email\":\"corta@elhornero.pe\",\"password\":\"123\",\"rol\":\"MOZO\"}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.mensaje")
+						.value("La contrasena debe tener entre 6 y 255 caracteres"));
+	}
+
+	@Test
+	void registrarSinRolEsRechazadoPorValidacion() throws Exception {
+		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"email\":\"sin.rol@elhornero.pe\",\"password\":\"" + CONTRASENA + "\"}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.mensaje").value("El rol es obligatorio"));
+	}
+
+	@Test
+	void registrarConTelefonoInvalidoDevuelve400() throws Exception {
+		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"email\":\"tel.malo@elhornero.pe\",\"password\":\"" + CONTRASENA
+						+ "\",\"telefono\":\"abc\",\"rol\":\"MOZO\"}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.mensaje").value(
+						"El telefono solo puede contener numeros, espacios, guiones, parentesis y el signo +"));
 	}
 
 	// ------------------------------------------------------------------
@@ -117,6 +175,22 @@ class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
 		mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
 				.content(cuerpoLogin("nadie@elhornero.pe", CONTRASENA)))
 				.andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void loginSinPasswordEsRechazadoPorValidacion() throws Exception {
+		mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"email\":\"sin.password.login@elhornero.pe\"}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.mensaje").value("La contrasena es obligatoria"));
+	}
+
+	@Test
+	void loginConCorreoInvalidoDevuelve400() throws Exception {
+		mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+				.content(cuerpoLogin("correo-invalido", CONTRASENA)))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.mensaje").value("El correo no tiene un formato valido"));
 	}
 
 	// ------------------------------------------------------------------
