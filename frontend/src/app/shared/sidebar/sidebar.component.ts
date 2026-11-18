@@ -52,7 +52,12 @@ export class SidebarComponent {
     {
       label: 'Pedidos',
       route: '/pedidos',
-      icon: ['M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z', 'M14 3v5h5', 'M9 13h6', 'M9 17h4'],
+      icon: [
+        'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z',
+        'M14 3v5h5',
+        'M9 13h6',
+        'M9 17h4',
+      ],
     },
     {
       label: 'Inventario',
@@ -71,6 +76,7 @@ export class SidebarComponent {
     { label: 'Reportes', icon: ['M3 3v18h18', 'M18 17V9', 'M13 17V6', 'M8 17v-3'] },
     {
       label: 'Usuarios y roles',
+      route: '/usuarios-roles',
       icon: [
         'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2',
         'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
@@ -112,6 +118,9 @@ export class SidebarComponent {
     }
     if (this.router.url.startsWith('/inventario')) {
       return 'Inventario';
+    }
+    if (this.router.url.startsWith('/usuarios-roles')) {
+      return 'Usuarios y roles';
     }
     if (this.router.url.startsWith('/dashboard')) {
       return 'Resumen';
