@@ -5,4 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PersonaRepository extends JpaRepository<Persona, Integer> {
 
+	boolean existsByEmailIgnoreCase(String email);
+
+	boolean existsByNumeroDocumentoIgnoreCase(String numeroDocumento);
+
 }

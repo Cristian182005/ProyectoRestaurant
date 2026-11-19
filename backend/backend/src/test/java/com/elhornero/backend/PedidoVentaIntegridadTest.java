@@ -138,8 +138,9 @@ class PedidoVentaIntegridadTest extends BasePruebaIntegracion {
 		mockMvc.perform(put("/api/pedidos/" + pedidoId + "/estado")
 				.contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"EN_PREPARACION\"}"))
 				.andExpect(status().isOk());
-		assertThat(insumoRepository.findById(insumoId)).hasValueSatisfying(
-				insumo -> assertThat(insumo.getStockActual()).isEqualTo(6.0));
+		double stockTrasPreparacion = insumoRepository.findById(insumoId).orElseThrow()
+				.getStockActual();
+		assertThat(stockTrasPreparacion).isEqualTo(6.0);
 
 		// repetir el mismo estado no vuelve a descontar (el mismo estado es no-op)
 		mockMvc.perform(put("/api/pedidos/" + pedidoId + "/estado")
@@ -165,7 +166,7 @@ class PedidoVentaIntegridadTest extends BasePruebaIntegracion {
 				.content(comprobante(pedidoId, "EFECTIVO", 100.0)))
 				.andExpect(status().isCreated()).andExpect(jsonPath("$.pedidoId").value(pedidoId));
 		assertThat(insumoRepository.findById(insumoId)).hasValueSatisfying(
-				insumo -> assertThat(insumo.getStockActual()).isEqualTo(6.0));
+				insumo -> assertThat(insumo.getStockActual()).isEqualTo(stockTrasPreparacion));
 		assertThat(pedidoRepository.findById(pedidoId)).hasValueSatisfying(
 				pedido -> assertThat(pedido.getEstado()).isEqualTo(EstadoPedido.ENTREGADO));
 

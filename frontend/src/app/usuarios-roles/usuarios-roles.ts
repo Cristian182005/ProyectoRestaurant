@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { SesionService } from '../core/sesion.service';
 import { SidebarComponent } from '../shared/sidebar/sidebar.component';
 
 export type RolUsuario = 'ADMINISTRADOR' | 'CAJERO' | 'MOZO';
@@ -43,30 +44,33 @@ const DESCRIPCIONES: Record<RolUsuario, string> = {
 
 const PERMISOS_BASE: Record<RolUsuario, Permiso[]> = {
   ADMINISTRADOR: [
-    { clave: 'dashboard', label: 'Dashboard y reportes', habilitado: true },
+    { clave: 'dashboard', label: 'Resumen', habilitado: true },
     { clave: 'salon', label: 'Salón y mesas', habilitado: true },
-    { clave: 'comandas', label: 'Comandas', habilitado: true },
+    { clave: 'pedidos', label: 'Comandas y pedidos', habilitado: true },
     { clave: 'caja', label: 'Caja y comprobantes', habilitado: true },
-    { clave: 'descuentos', label: 'Descuentos', habilitado: true },
-    { clave: 'inventario', label: 'Inventario y recetas', habilitado: true },
+    { clave: 'inventario', label: 'Inventario', habilitado: true },
+    { clave: 'productos', label: 'Productos y recetas', habilitado: true },
+    { clave: 'reportes', label: 'Reportes', habilitado: true },
     { clave: 'usuarios', label: 'Usuarios y permisos', habilitado: true },
   ],
   CAJERO: [
-    { clave: 'dashboard', label: 'Dashboard y reportes', habilitado: true },
+    { clave: 'dashboard', label: 'Resumen', habilitado: true },
     { clave: 'salon', label: 'Salón y mesas', habilitado: false },
-    { clave: 'comandas', label: 'Comandas', habilitado: false },
+    { clave: 'pedidos', label: 'Comandas y pedidos', habilitado: false },
     { clave: 'caja', label: 'Caja y comprobantes', habilitado: true },
-    { clave: 'descuentos', label: 'Descuentos', habilitado: true },
-    { clave: 'inventario', label: 'Inventario y recetas', habilitado: false },
+    { clave: 'inventario', label: 'Inventario', habilitado: false },
+    { clave: 'productos', label: 'Productos y recetas', habilitado: false },
+    { clave: 'reportes', label: 'Reportes', habilitado: true },
     { clave: 'usuarios', label: 'Usuarios y permisos', habilitado: false },
   ],
   MOZO: [
-    { clave: 'dashboard', label: 'Dashboard y reportes', habilitado: false },
+    { clave: 'dashboard', label: 'Resumen', habilitado: true },
     { clave: 'salon', label: 'Salón y mesas', habilitado: true },
-    { clave: 'comandas', label: 'Comandas', habilitado: true },
+    { clave: 'pedidos', label: 'Comandas y pedidos', habilitado: true },
     { clave: 'caja', label: 'Caja y comprobantes', habilitado: false },
-    { clave: 'descuentos', label: 'Descuentos', habilitado: false },
-    { clave: 'inventario', label: 'Inventario y recetas', habilitado: false },
+    { clave: 'inventario', label: 'Inventario', habilitado: false },
+    { clave: 'productos', label: 'Productos y recetas', habilitado: true },
+    { clave: 'reportes', label: 'Reportes', habilitado: false },
     { clave: 'usuarios', label: 'Usuarios y permisos', habilitado: false },
   ],
 };
@@ -159,6 +163,7 @@ const AUDITORIA_BASE: RegistroAuditoria[] = [
 })
 export class UsuariosRoles {
   private readonly router = inject(Router);
+  private readonly sesion = inject(SesionService);
 
   private avisoTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -274,6 +279,7 @@ export class UsuariosRoles {
   }
 
   onLogout(): void {
+    this.sesion.cerrarSesion();
     void this.router.navigate(['/']);
   }
 

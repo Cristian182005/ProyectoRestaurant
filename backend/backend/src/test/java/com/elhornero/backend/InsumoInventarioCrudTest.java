@@ -207,7 +207,7 @@ class InsumoInventarioCrudTest extends BasePruebaIntegracion {
 
 	@Test
 	void noPermiteEliminarInsumoConIngresosRegistrados() throws Exception {
-		int proveedorId = crearProveedor(9451).getId();
+		int proveedorId = crearProveedor().getId();
 		int empleadoId = crearEmpleado(9452, "Almacen").getId();
 		int insumoId = crearInsumo("Insumo Con Ingreso", 10.0, 1.0);
 

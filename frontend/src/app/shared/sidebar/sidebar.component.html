@@ -10,7 +10,7 @@
   </div>
 
   <nav class="nav">
-    @for (item of navItems; track item.label) {
+    @for (item of navItemsVisibles(); track item.label) {
       <button
         type="button"
         class="nav-item"

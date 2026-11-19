@@ -225,9 +225,8 @@ public abstract class BasePruebaIntegracion {
 		return empleadoRepository.save(empleado);
 	}
 
-	protected Proveedor crearProveedor(int id) {
+	protected Proveedor crearProveedor() {
 		Proveedor proveedor = new Proveedor();
-		proveedor.setId(id);
 		proveedor.setFechaRegistro(LocalDate.now());
 		return proveedorRepository.save(proveedor);
 	}

@@ -205,7 +205,7 @@
                 id="reg-rol"
                 name="rol"
                 [ngModel]="rol()"
-                (ngChange)="onRolChange($event)"
+                (ngModelChange)="onRolChange($event)"
               >
                 @for (item of roles; track item) {
                   <option [value]="item">{{ item }}</option>

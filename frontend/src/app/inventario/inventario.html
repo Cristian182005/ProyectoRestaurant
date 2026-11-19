@@ -215,7 +215,7 @@
               (change)="onCategoria($event)"
               class="h-[38px] w-full appearance-none rounded-[10px] border border-cream-400 bg-[#fffdf9] pr-8 pl-3 text-[0.8rem] text-ink-800 outline-none transition-colors focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
             >
-              @for (option of categoriaOptions; track option.value) {
+              @for (option of categoriaOptions(); track option.value) {
                 <option [value]="option.value">{{ option.label }}</option>
               }
             </select>
@@ -606,6 +606,28 @@
             </div>
           </div>
 
+          @if (formTipo() === 'entrada') {
+            <div>
+              <label
+                for="mov-proveedor"
+                class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
+              >
+                Proveedor
+              </label>
+              <select
+                id="mov-proveedor"
+                class="h-[38px] w-full rounded-[10px] border border-cream-400 bg-white px-3 text-[0.8rem] text-ink-800"
+                [value]="formProveedorId() ?? ''"
+                (change)="onFormProveedor($event)"
+              >
+                <option value="">Selecciona un proveedor</option>
+                @for (proveedor of proveedores(); track proveedor.id) {
+                  <option [value]="proveedor.id">{{ proveedor.nombre }}</option>
+                }
+              </select>
+            </div>
+          }
+
           <div class="grid grid-cols-1 gap-3.5 min-[420px]:grid-cols-2">
             <div>
               <label
@@ -682,13 +704,12 @@
     </div>
   }
 
-  <!-- Aviso flotante -->
-  @if (aviso()) {
+  @if (notificaciones.visible()) {
     <div
-      class="fixed right-5 bottom-5 z-50 max-w-[min(360px,90vw)] rounded-[10px] bg-surface-dark px-4 py-3 text-[0.78rem] font-medium text-white shadow-card"
+      class="fixed right-5 bottom-5 z-[60] max-w-[min(360px,90vw)] rounded-[10px] bg-surface-dark px-4 py-3 text-[0.78rem] font-medium text-white shadow-card"
       role="status"
     >
-      {{ aviso() }}
+      {{ notificaciones.mensaje() }}
     </div>
   }
 </div>

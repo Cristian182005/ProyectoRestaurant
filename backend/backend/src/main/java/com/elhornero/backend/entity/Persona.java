@@ -30,6 +30,15 @@ public class Persona {
 	@Column(length = 50)
 	private String rol;
 
+	@Column(length = 100)
+	private String nombre;
+
+	@Column(name = "tipo_documento", length = 20)
+	private String tipoDocumento;
+
+	@Column(name = "numero_documento", length = 30)
+	private String numeroDocumento;
+
 	@OneToOne(mappedBy = "persona")
 	@JsonIgnore
 	private Usuario usuario;
@@ -72,6 +81,30 @@ public class Persona {
 
 	public void setRol(String rol) {
 		this.rol = rol;
+	}
+
+	public String getNombre() {
+		return nombre;
+	}
+
+	public void setNombre(String nombre) {
+		this.nombre = nombre;
+	}
+
+	public String getTipoDocumento() {
+		return tipoDocumento;
+	}
+
+	public void setTipoDocumento(String tipoDocumento) {
+		this.tipoDocumento = tipoDocumento;
+	}
+
+	public String getNumeroDocumento() {
+		return numeroDocumento;
+	}
+
+	public void setNumeroDocumento(String numeroDocumento) {
+		this.numeroDocumento = numeroDocumento;
 	}
 
 	public Usuario getUsuario() {

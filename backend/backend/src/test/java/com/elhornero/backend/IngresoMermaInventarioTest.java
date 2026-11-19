@@ -20,7 +20,7 @@ class IngresoMermaInventarioTest extends BasePruebaIntegracion {
 
 	@BeforeEach
 	void prepararSocio() {
-		proveedorId = crearProveedor(9101).getId();
+		proveedorId = crearProveedor().getId();
 		empleadoId = crearEmpleado(9102, "Almacen").getId();
 	}
 

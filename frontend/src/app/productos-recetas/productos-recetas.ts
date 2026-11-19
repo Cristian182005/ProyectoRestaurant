@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { SesionService } from '../core/sesion.service';
 import { SidebarComponent } from '../shared/sidebar/sidebar.component';
 
 type EstadoProducto = 'disponible' | 'pausado';
@@ -37,6 +38,7 @@ interface CategoriaChip {
 })
 export class ProductosRecetas {
   private readonly router = inject(Router);
+  private readonly sesion = inject(SesionService);
 
   readonly sidebarOpen = signal(false);
   readonly activeSection = signal('Productos y recetas');
@@ -593,6 +595,7 @@ export class ProductosRecetas {
   }
 
   onLogout(): void {
+    this.sesion.cerrarSesion();
     void this.router.navigate(['/']);
   }
 

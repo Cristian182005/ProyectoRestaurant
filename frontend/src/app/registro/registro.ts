@@ -74,7 +74,7 @@ export class Registro {
     void this.router.navigate(['/']);
   }
 
-  onRolChange(event: Event): void {
-    this.rol.set((event.target as HTMLSelectElement).value);
+  onRolChange(rol: string): void {
+    this.rol.set(rol);
   }
 }

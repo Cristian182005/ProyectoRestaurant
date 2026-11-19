@@ -66,13 +66,20 @@ public class SecurityConfig {
 						.requestMatchers(HttpMethod.DELETE, "/api/platos/**",
 								"/api/categorias/**")
 						.hasRole("ADMINISTRADOR")
-						// Salon y comandas: administrador o mozo
-						.requestMatchers("/api/mesas/**", "/api/pedidos/**",
-								"/api/detalles-pedido/**")
-						.hasAnyRole("ADMINISTRADOR", "MOZO")
+					// Caja necesita consultar pedidos entregados para emitir comprobantes
+					.requestMatchers(HttpMethod.GET, "/api/pedidos/**",
+							"/api/detalles-pedido/**")
+					.hasAnyRole("ADMINISTRADOR", "MOZO", "CAJERO")
+					// Salon y comandas: administrador o mozo
+					.requestMatchers("/api/mesas/**", "/api/pedidos/**",
+							"/api/detalles-pedido/**")
+					.hasAnyRole("ADMINISTRADOR", "MOZO")
 						// Caja y comprobantes: administrador o cajero
 						.requestMatchers("/api/comprobantes/**")
 						.hasAnyRole("ADMINISTRADOR", "CAJERO")
+						.requestMatchers("/api/clientes/**")
+						.hasAnyRole("ADMINISTRADOR", "CAJERO")
+						.requestMatchers("/api/proveedores/**").hasRole("ADMINISTRADOR")
 						// Lectura de carta: cualquier autenticado (GET platos/categorias)
 						.requestMatchers(HttpMethod.GET, "/api/platos/**",
 								"/api/categorias/**")

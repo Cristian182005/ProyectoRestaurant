@@ -1,6 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, tap, throwError } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { SesionService } from './sesion.service';
 
 export interface AuthResponse {
@@ -9,6 +10,8 @@ export interface AuthResponse {
   email: string;
   rol: string;
   expiraEn: string;
+  id: number;
+  empleadoId: number | null;
 }
 
 export interface RegistroRequest {
@@ -27,7 +30,7 @@ export interface UsuarioResponse {
   direccion: string | null;
 }
 
-const API_AUTH = 'http://localhost:8080/api/auth';
+const API_AUTH = `${environment.apiUrl}/auth`;
 
 /** Cliente HTTP de autenticación: login y registro contra el backend. */
 @Injectable({ providedIn: 'root' })
@@ -44,6 +47,8 @@ export class AuthService {
             email: respuesta.email,
             rol: respuesta.rol,
             expiraEn: respuesta.expiraEn,
+            id: respuesta.id,
+            empleadoId: respuesta.empleadoId,
           },
           recordar
         )

@@ -66,18 +66,18 @@ describe('UsuariosRoles', () => {
     expect(compiled.textContent).toContain('Control total del sistema');
   });
 
-  it('should start with two permissions enabled for the MOZO role', () => {
+  it('should start with the MOZO permissions aligned to the access matrix', () => {
     const fixture = TestBed.createComponent(UsuariosRoles);
     const component = fixture.componentInstance;
 
-    expect(component.permisosDelRol().length).toBe(7);
-    expect(component.permisosActivos()).toBe(2);
+    expect(component.permisosDelRol().length).toBe(8);
+    expect(component.permisosActivos()).toBe(4);
     expect(
       component
         .permisosDelRol()
         .filter((permiso) => permiso.habilitado)
         .map((p) => p.clave),
-    ).toEqual(['salon', 'comandas']);
+    ).toEqual(['dashboard', 'salon', 'pedidos', 'productos']);
   });
 
   it('should toggle permissions only in edit mode and save them', () => {
@@ -86,13 +86,13 @@ describe('UsuariosRoles', () => {
     fixture.detectChanges();
 
     component.alternarPermiso('caja');
-    expect(component.permisosActivos()).toBe(2);
+    expect(component.permisosActivos()).toBe(4);
 
     component.onEditarPermisos();
     expect(component.editandoPermisos()).toBeTrue();
 
     component.alternarPermiso('caja');
-    expect(component.permisosActivos()).toBe(3);
+    expect(component.permisosActivos()).toBe(5);
 
     component.onEditarPermisos();
     fixture.detectChanges();

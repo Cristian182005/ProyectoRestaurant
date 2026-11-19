@@ -154,10 +154,19 @@ class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
 				.andExpect(jsonPath("$.tipo").value("Bearer"))
 				.andExpect(jsonPath("$.email").value("login.ok@elhornero.pe"))
 				.andExpect(jsonPath("$.rol").value("MOZO"))
-				.andExpect(jsonPath("$.expiraEn").isNotEmpty()).andReturn();
+				.andExpect(jsonPath("$.expiraEn").isNotEmpty()).andExpect(jsonPath("$.id").isNumber())
+				.andReturn();
 
-		String token = JsonPath.read(login.getResponse().getContentAsString(), "$.token");
+		String cuerpo = login.getResponse().getContentAsString();
+		String token = JsonPath.read(cuerpo, "$.token");
+		int id = JsonPath.read(cuerpo, "$.id");
 		assertThat(token.split("\\.")).hasSize(3);
+
+		crearEmpleado(id, "Atencion al cliente");
+		mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+				.content(cuerpoLogin("login.ok@elhornero.pe", CONTRASENA)))
+				.andExpect(status().isOk()).andExpect(jsonPath("$.id").value(id))
+				.andExpect(jsonPath("$.empleadoId").value(id));
 	}
 
 	@Test
@@ -251,7 +260,11 @@ class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
 				.andExpect(status().isOk());
 		mockMvc.perform(get("/api/mesas").header("Authorization", bearer(tokenCajero)))
 				.andExpect(status().isForbidden());
+		// El cajero puede consultar pedidos para saber cuales estan entregados
 		mockMvc.perform(get("/api/pedidos").header("Authorization", bearer(tokenCajero)))
+				.andExpect(status().isOk());
+		mockMvc.perform(post("/api/pedidos").contentType(MediaType.APPLICATION_JSON)
+				.content("{}").header("Authorization", bearer(tokenCajero)))
 				.andExpect(status().isForbidden());
 	}
 
@@ -274,6 +287,32 @@ class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
 		mockMvc.perform(post("/api/comprobantes").contentType(MediaType.APPLICATION_JSON)
 				.content("{}").header("Authorization", bearer(tokenCajero)))
 				.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void clientesYProveedoresMatrizDeRoles() throws Exception {
+		registrar("mozo.clientes@elhornero.pe", "MOZO");
+		registrar("cajero.clientes@elhornero.pe", "CAJERO");
+		crearUsuarioDirecto("admin.clientes@elhornero.pe", "ADMINISTRADOR");
+		String tokenMozo = login("mozo.clientes@elhornero.pe");
+		String tokenCajero = login("cajero.clientes@elhornero.pe");
+		String tokenAdmin = login("admin.clientes@elhornero.pe");
+
+		mockMvc.perform(get("/api/clientes/naturales").header("Authorization", bearer(tokenCajero)))
+				.andExpect(status().isOk());
+		mockMvc.perform(get("/api/clientes/juridicos").header("Authorization", bearer(tokenAdmin)))
+				.andExpect(status().isOk());
+		mockMvc.perform(get("/api/clientes/naturales").header("Authorization", bearer(tokenMozo)))
+				.andExpect(status().isForbidden());
+
+		mockMvc.perform(get("/api/proveedores").header("Authorization", bearer(tokenAdmin)))
+				.andExpect(status().isOk());
+		mockMvc.perform(get("/api/proveedores").header("Authorization", bearer(tokenCajero)))
+				.andExpect(status().isForbidden());
+		mockMvc.perform(post("/api/proveedores").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"nombre\":\"X\",\"ruc\":\"1\"}")
+				.header("Authorization", bearer(tokenCajero)))
+				.andExpect(status().isForbidden());
 	}
 
 	@Test

@@ -1,12 +1,26 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { NgClass } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SidebarComponent } from '../shared/sidebar/sidebar.component';
+import {
+  CajaService,
+  Comprobante,
+  ResumenVentas,
+  TIPOS_PAGO,
+  TipoPago,
+  fechaISO,
+} from '../core/caja.service';
+import { ClienteResponse, ClienteService } from '../core/cliente.service';
+import { Pedido, PedidoService } from '../core/pedido.service';
+import { SesionService } from '../core/sesion.service';
+import { NotificationService } from '../core/notification.service';
 
 type KpiTone = 'green' | 'blue' | 'amber' | 'red';
 type ComprobanteTipo = 'Factura' | 'Boleta';
 type ComprobanteEstado = 'Emitido' | 'Enviado SUNAT' | 'Anulado';
 type CategoriaFiltro = 'todas' | ComprobanteTipo;
+type TipoCliente = 'natural' | 'juridico';
 
 interface KpiCard {
   label: string;
@@ -16,7 +30,7 @@ interface KpiCard {
   icon: string[];
 }
 
-interface Comprobante {
+interface ComprobanteFila {
   id: string;
   comprobante: string;
   tipo: ComprobanteTipo;
@@ -30,7 +44,41 @@ interface Comprobante {
   fecha: string;
   hora: string;
   cdr: string;
+  gravado: number;
+  igv: number;
+  vuelto: number;
+  montoRecibido: number;
+  pedidoId: number | null;
 }
+
+const COMPROBANTE_VACIO: ComprobanteFila = {
+  id: '',
+  comprobante: '—',
+  tipo: 'Boleta',
+  cliente: '—',
+  documento: '—',
+  email: '—',
+  pago: '—',
+  metodo: '—',
+  total: 0,
+  estado: 'Emitido',
+  fecha: '—',
+  hora: '—',
+  cdr: '—',
+  gravado: 0,
+  igv: 0,
+  vuelto: 0,
+  montoRecibido: 0,
+  pedidoId: null,
+};
+
+const ETIQUETAS_PAGO: Record<TipoPago, string> = {
+  EFECTIVO: 'Efectivo',
+  TARJETA: 'Tarjeta',
+  YAPE: 'Yape',
+  PLIN: 'Plin',
+  TRANSFERENCIA: 'Transferencia',
+};
 
 @Component({
   selector: 'app-caja-ventas',
@@ -39,61 +87,92 @@ interface Comprobante {
 })
 export class CajaVentas {
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly cajaService = inject(CajaService);
+  private readonly clienteService = inject(ClienteService);
+  private readonly pedidoService = inject(PedidoService);
+  private readonly sesion = inject(SesionService);
+  readonly notificaciones = inject(NotificationService);
 
   readonly sidebarOpen = signal(false);
   readonly activeSection = signal('Caja y ventas');
-  readonly dateLabel = 'Jue, 01 oct 2026';
+  readonly dateLabel = new Intl.DateTimeFormat('es-PE', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date());
 
   readonly searchTerm = signal('');
   readonly categoria = signal<CategoriaFiltro>('todas');
-  readonly fecha = signal('01 oct 2026');
+  readonly desde = signal(fechaISO(new Date()));
+  readonly hasta = signal(fechaISO(new Date()));
   readonly page = signal(1);
-  readonly selectedId = signal('f001-00842');
+  readonly selectedId = signal('');
+
+  readonly comprobantes = signal<ComprobanteFila[]>([]);
+  readonly resumen = signal<ResumenVentas | null>(null);
+  readonly pedidosEntregados = signal<Pedido[]>([]);
+  readonly clientesNaturales = signal<ClienteResponse[]>([]);
+  readonly clientesJuridicos = signal<ClienteResponse[]>([]);
+  readonly ultimoComprobante = signal<Comprobante | null>(null);
+
+  readonly modalVentaAbierto = signal(false);
+  readonly formPedidoId = signal<number | null>(null);
+  readonly formTipoCliente = signal<TipoCliente>('natural');
+  readonly formClienteId = signal<number | null>(null);
+  readonly formTipoPago = signal<TipoPago>('EFECTIVO');
+  readonly formMontoRecibido = signal<number | null>(null);
+  readonly formError = signal('');
+  readonly tiposPago = TIPOS_PAGO;
 
   readonly pageSize = 6;
 
-  readonly dateOptions = ['01 oct 2026', '30 sep 2026', '29 sep 2026'];
-
-  readonly kpis: KpiCard[] = [
-    {
-      label: 'Venta neta',
-      value: 'S/ 18,420',
-      detail: '+12.4%',
-      tone: 'green',
-      icon: ['M3 17l6.5-6.5 4 4L21 7', 'M15 7h6v6'],
-    },
-    {
-      label: 'Comprobantes',
-      value: '96',
-      detail: '81 boletas · 15 facturas',
-      tone: 'blue',
-      icon: [
-        'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z',
-        'M14 3v5h5',
-        'M9 13h6',
-        'M9 17h4',
-      ],
-    },
-    {
-      label: 'IGV',
-      value: 'S/ 3,315.60',
-      detail: 'Por declarar',
-      tone: 'amber',
-      icon: ['M3 10 12 3l9 7', 'M5 10v10', 'M9.5 10v10', 'M14.5 10v10', 'M19 10v10', 'M3 20h18'],
-    },
-    {
-      label: 'Anulaciones',
-      value: '2',
-      detail: 'S/ 341.40',
-      tone: 'red',
-      icon: [
-        'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z',
-        'M14 3v5h5',
-        'm9.5 12.5 5 5',
-        'm14.5 12.5-5 5',
-      ],
-    },
-  ];
+  readonly kpis = computed<KpiCard[]>(() => {
+    const data = this.resumen();
+    const ventas = data?.totalVentas ?? 0;
+    const igv = data?.totalIgv ?? 0;
+    return [
+      {
+        label: 'Venta neta',
+        value: `S/ ${this.money(ventas - igv)}`,
+        detail: `Total S/ ${this.money(ventas)}`,
+        tone: 'green' as KpiTone,
+        icon: ['M3 17l6.5-6.5 4 4L21 7', 'M15 7h6v6'],
+      },
+      {
+        label: 'Comprobantes',
+        value: String(data?.cantidadComprobantes ?? 0),
+        detail: `Ticket S/ ${this.money(data?.promedioTicket ?? 0)}`,
+        tone: 'blue' as KpiTone,
+        icon: [
+          'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z',
+          'M14 3v5h5',
+          'M9 13h6',
+          'M9 17h4',
+        ],
+      },
+      {
+        label: 'IGV',
+        value: `S/ ${this.money(igv)}`,
+        detail: 'Por declarar',
+        tone: 'amber' as KpiTone,
+        icon: ['M3 10 12 3l9 7', 'M5 10v10', 'M9.5 10v10', 'M14.5 10v10', 'M19 10v10', 'M3 20h18'],
+      },
+      {
+        label: 'Anulaciones',
+        value: '0',
+        detail: 'Sin anulaciones registradas',
+        tone: 'red' as KpiTone,
+        icon: [
+          'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z',
+          'M14 3v5h5',
+          'm9.5 12.5 5 5',
+          'm14.5 12.5-5 5',
+        ],
+      },
+    ];
+  });
 
   readonly toneIcon: Record<KpiTone, string> = {
     green: 'bg-ok-100 text-ok-600',
@@ -115,51 +194,16 @@ export class CajaVentas {
     Anulado: 'bg-danger-100 text-danger-700',
   };
 
-  readonly comprobantes: Comprobante[] = [
-    { id: 'f001-00842', comprobante: 'F001-00842', tipo: 'Factura', cliente: 'Restobar Andino S.A.C.', documento: 'RUC 20604587122', email: 'contabilidad@andino.pe', pago: 'Tarjeta', metodo: 'Visa •••• 4821', total: 286.5, estado: 'Emitido', fecha: '01/10/2026', hora: '12:49', cdr: '12:50' },
-    { id: 'b001-04218', comprobante: 'B001-04218', tipo: 'Boleta', cliente: 'María Torres', documento: 'DNI 44871209', email: 'maria.torres@gmail.com', pago: 'Yape', metodo: 'Yape •••• 3391', total: 174.9, estado: 'Emitido', fecha: '01/10/2026', hora: '12:44', cdr: '12:45' },
-    { id: 'b001-04217', comprobante: 'B001-04217', tipo: 'Boleta', cliente: 'Cliente varios', documento: 'Sin identificar', email: '—', pago: 'Efectivo', metodo: 'Efectivo', total: 98, estado: 'Emitido', fecha: '01/10/2026', hora: '12:38', cdr: '12:39' },
-    { id: 'f001-00841', comprobante: 'F001-00841', tipo: 'Factura', cliente: 'Logística Sur S.R.L.', documento: 'RUC 20512398744', email: 'administracion@logisticasur.pe', pago: 'Visa', metodo: 'Visa •••• 9017', total: 342.8, estado: 'Enviado SUNAT', fecha: '01/10/2026', hora: '12:31', cdr: '12:32' },
-    { id: 'b001-04216', comprobante: 'B001-04216', tipo: 'Boleta', cliente: 'Sofía Mendoza', documento: 'DNI 76321908', email: 'sofia.mendoza@outlook.com', pago: 'Plin', metodo: 'Plin •••• 2074', total: 126, estado: 'Emitido', fecha: '01/10/2026', hora: '12:25', cdr: '12:26' },
-    { id: 'b001-04215', comprobante: 'B001-04215', tipo: 'Boleta', cliente: 'Cliente varios', documento: 'Sin identificar', email: '—', pago: 'Efectivo', metodo: 'Efectivo', total: 215.4, estado: 'Anulado', fecha: '01/10/2026', hora: '12:18', cdr: '12:20' },
-    { id: 'f001-00840', comprobante: 'F001-00840', tipo: 'Factura', cliente: 'Hotel Costa Verde E.I.R.L.', documento: 'RUC 20458796311', email: 'reservas@costaverde.pe', pago: 'Tarjeta', metodo: 'Mastercard •••• 5540', total: 512.3, estado: 'Emitido', fecha: '01/10/2026', hora: '12:05', cdr: '12:06' },
-    { id: 'b001-04214', comprobante: 'B001-04214', tipo: 'Boleta', cliente: 'Jorge Salazar', documento: 'DNI 40982317', email: 'jorge.salazar@gmail.com', pago: 'Yape', metodo: 'Yape •••• 8812', total: 89.9, estado: 'Emitido', fecha: '01/10/2026', hora: '11:58', cdr: '11:59' },
-    { id: 'b001-04213', comprobante: 'B001-04213', tipo: 'Boleta', cliente: 'Cliente varios', documento: 'Sin identificar', email: '—', pago: 'Efectivo', metodo: 'Efectivo', total: 156, estado: 'Emitido', fecha: '01/10/2026', hora: '11:52', cdr: '11:53' },
-    { id: 'f001-00839', comprobante: 'F001-00839', tipo: 'Factura', cliente: 'Mercado Martín S.A.C.', documento: 'RUC 20339874512', email: 'compras@mercadomartin.pe', pago: 'Visa', metodo: 'Visa •••• 3320', total: 1240.8, estado: 'Enviado SUNAT', fecha: '01/10/2026', hora: '11:44', cdr: '11:45' },
-    { id: 'b001-04212', comprobante: 'B001-04212', tipo: 'Boleta', cliente: 'Lucía Ferrer', documento: 'DNI 70123456', email: 'lucia.ferrer@gmail.com', pago: 'Plin', metodo: 'Plin •••• 6620', total: 232.5, estado: 'Emitido', fecha: '01/10/2026', hora: '11:37', cdr: '11:38' },
-    { id: 'b001-04211', comprobante: 'B001-04211', tipo: 'Boleta', cliente: 'Cliente varios', documento: 'Sin identificar', email: '—', pago: 'Efectivo', metodo: 'Efectivo', total: 64, estado: 'Emitido', fecha: '01/10/2026', hora: '11:30', cdr: '11:31' },
-    { id: 'f001-00838', comprobante: 'F001-00838', tipo: 'Factura', cliente: 'Estudio Jurídico Ramos', documento: 'RUC 20114567893', email: 'contacto@ramosabogados.pe', pago: 'Tarjeta', metodo: 'Visa •••• 2210', total: 398, estado: 'Emitido', fecha: '01/10/2026', hora: '11:22', cdr: '11:23' },
-    { id: 'b001-04210', comprobante: 'B001-04210', tipo: 'Boleta', cliente: 'Diego Quispe', documento: 'DNI 45678912', email: 'diego.quispe@outlook.com', pago: 'Yape', metodo: 'Yape •••• 4471', total: 145.6, estado: 'Emitido', fecha: '01/10/2026', hora: '11:15', cdr: '11:16' },
-    { id: 'b001-04209', comprobante: 'B001-04209', tipo: 'Boleta', cliente: 'Cliente varios', documento: 'Sin identificar', email: '—', pago: 'Efectivo', metodo: 'Efectivo', total: 126, estado: 'Anulado', fecha: '01/10/2026', hora: '11:07', cdr: '11:09' },
-    { id: 'f001-00837', comprobante: 'F001-00837', tipo: 'Factura', cliente: 'Panadería La Espiga S.A.C.', documento: 'RUC 20778451236', email: 'gerencia@laespiga.pe', pago: 'Plin', metodo: 'Plin •••• 9903', total: 675.4, estado: 'Enviado SUNAT', fecha: '01/10/2026', hora: '10:58', cdr: '10:59' },
-    { id: 'b001-04208', comprobante: 'B001-04208', tipo: 'Boleta', cliente: 'Camila Rojas', documento: 'DNI 71456098', email: 'camila.rojas@gmail.com', pago: 'Tarjeta', metodo: 'Mastercard •••• 7734', total: 98.7, estado: 'Emitido', fecha: '01/10/2026', hora: '10:51', cdr: '10:52' },
-    { id: 'b001-04207', comprobante: 'B001-04207', tipo: 'Boleta', cliente: 'Cliente varios', documento: 'Sin identificar', email: '—', pago: 'Efectivo', metodo: 'Efectivo', total: 187.2, estado: 'Emitido', fecha: '01/10/2026', hora: '10:44', cdr: '10:45' },
-    { id: 'f001-00836', comprobante: 'F001-00836', tipo: 'Factura', cliente: 'Operadora Turística Andes', documento: 'RUC 20661230987', email: 'ventas@turismoandes.pe', pago: 'Visa', metodo: 'Visa •••• 6180', total: 890, estado: 'Emitido', fecha: '01/10/2026', hora: '10:36', cdr: '10:37' },
-    { id: 'b001-04206', comprobante: 'B001-04206', tipo: 'Boleta', cliente: 'Roberto Mendoza', documento: 'DNI 43210987', email: 'roberto.mendoza@gmail.com', pago: 'Yape', metodo: 'Yape •••• 1180', total: 76.5, estado: 'Emitido', fecha: '01/10/2026', hora: '10:29', cdr: '10:30' },
-    { id: 'b001-04205', comprobante: 'B001-04205', tipo: 'Boleta', cliente: 'Cliente varios', documento: 'Sin identificar', email: '—', pago: 'Efectivo', metodo: 'Efectivo', total: 203.8, estado: 'Emitido', fecha: '30/09/2026', hora: '22:14', cdr: '22:15' },
-    { id: 'f001-00835', comprobante: 'F001-00835', tipo: 'Factura', cliente: 'Clínica Santa Fe S.A.C.', documento: 'RUC 20554780123', email: 'administracion@santafe.pe', pago: 'Tarjeta', metodo: 'Visa •••• 5067', total: 455.6, estado: 'Enviado SUNAT', fecha: '30/09/2026', hora: '21:58', cdr: '21:59' },
-    { id: 'b001-04204', comprobante: 'B001-04204', tipo: 'Boleta', cliente: 'Ana Paredes', documento: 'DNI 48712036', email: 'ana.paredes@outlook.com', pago: 'Plin', metodo: 'Plin •••• 7742', total: 134.9, estado: 'Emitido', fecha: '30/09/2026', hora: '21:41', cdr: '21:42' },
-    { id: 'b001-04203', comprobante: 'B001-04203', tipo: 'Boleta', cliente: 'Cliente varios', documento: 'Sin identificar', email: '—', pago: 'Efectivo', metodo: 'Efectivo', total: 88.4, estado: 'Emitido', fecha: '30/09/2026', hora: '21:22', cdr: '21:23' },
-    { id: 'f001-00834', comprobante: 'F001-00834', tipo: 'Factura', cliente: 'Distribuidora El Sol S.R.L.', documento: 'RUC 20441209876', email: 'cuentas@delsol.pe', pago: 'Visa', metodo: 'Visa •••• 8891', total: 768.2, estado: 'Emitido', fecha: '29/09/2026', hora: '20:47', cdr: '20:48' },
-    { id: 'b001-04202', comprobante: 'B001-04202', tipo: 'Boleta', cliente: 'Fernando Cárdenas', documento: 'DNI 41209873', email: 'f.cardenas@gmail.com', pago: 'Yape', metodo: 'Yape •••• 2019', total: 165.3, estado: 'Emitido', fecha: '29/09/2026', hora: '20:31', cdr: '20:32' },
-    { id: 'b001-04201', comprobante: 'B001-04201', tipo: 'Boleta', cliente: 'Cliente varios', documento: 'Sin identificar', email: '—', pago: 'Efectivo', metodo: 'Efectivo', total: 142, estado: 'Emitido', fecha: '29/09/2026', hora: '20:12', cdr: '20:13' },
-    { id: 'b001-04200', comprobante: 'B001-04200', tipo: 'Boleta', cliente: 'Valeria Núñez', documento: 'DNI 75609821', email: 'valeria.nunez@gmail.com', pago: 'Plin', metodo: 'Plin •••• 5508', total: 119.6, estado: 'Emitido', fecha: '29/09/2026', hora: '19:55', cdr: '19:56' },
-  ];
-
   readonly filtered = computed(() => {
     const term = this.searchTerm().trim().toLowerCase();
     const categoria = this.categoria();
-    const fecha = this.fecha();
-
-    return this.comprobantes.filter((row) => {
+    return this.comprobantes().filter((row) => {
       const matchesTerm =
         term === '' ||
         row.comprobante.toLowerCase().includes(term) ||
         row.cliente.toLowerCase().includes(term) ||
         row.pago.toLowerCase().includes(term);
-      const matchesCategoria = categoria === 'todas' || row.tipo === categoria;
-      const matchesFecha = row.fecha === this.toFechaKey(fecha);
-      return matchesTerm && matchesCategoria && matchesFecha;
+      return matchesTerm && (categoria === 'todas' || row.tipo === categoria);
     });
   });
 
@@ -173,11 +217,11 @@ export class CajaVentas {
   readonly rangeLabel = computed(() => {
     const total = this.filtered().length;
     if (total === 0) {
-      return 'Mostrando 0–0 de 0 registros';
+      return 'Mostrando 0-0 de 0 registros';
     }
     const from = (this.page() - 1) * this.pageSize + 1;
     const to = Math.min(this.page() * this.pageSize, total);
-    return `Mostrando ${from}–${to} de ${total} registros`;
+    return `Mostrando ${from}-${to} de ${total} registros`;
   });
 
   readonly pageNumbers = computed(() => {
@@ -190,19 +234,45 @@ export class CajaVentas {
     return pages;
   });
 
-  readonly filterSummary = computed(() => {
-    const categoria = this.categoria();
-    const label =
-      categoria === 'todas' ? 'Todos los comprobantes' : `${categoria}s`;
-    return `${this.fecha()} · ${label}`;
-  });
+  readonly filterSummary = computed(
+    () => `${this.desde()} al ${this.hasta()} · ${this.comprobantes().length} comprobantes`
+  );
 
-  readonly selected = computed(() => {
-    return (
-      this.comprobantes.find((row) => row.id === this.selectedId()) ??
-      this.comprobantes[0]
-    );
-  });
+  readonly selected = computed(
+    () => this.comprobantes().find((row) => row.id === this.selectedId()) ?? COMPROBANTE_VACIO
+  );
+
+  readonly clientesDelFormulario = computed(() =>
+    this.formTipoCliente() === 'natural' ? this.clientesNaturales() : this.clientesJuridicos()
+  );
+
+  constructor() {
+    this.cargarDatos();
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const pedido = params.get('pedido');
+      if (pedido) {
+        this.formPedidoId.set(Number(pedido));
+        this.abrirVenta();
+      }
+    });
+  }
+
+  cargarDatos(): void {
+    this.cargarComprobantes();
+    this.cargarResumen();
+    this.clienteService.listarNaturales().subscribe({
+      next: (clientes) => this.clientesNaturales.set(clientes),
+      error: () => this.clientesNaturales.set([]),
+    });
+    this.clienteService.listarJuridicos().subscribe({
+      next: (clientes) => this.clientesJuridicos.set(clientes),
+      error: () => this.clientesJuridicos.set([]),
+    });
+    this.pedidoService.listar('ENTREGADO').subscribe({
+      next: (pedidos) => this.pedidosEntregados.set(pedidos),
+      error: () => this.pedidosEntregados.set([]),
+    });
+  }
 
   onSearch(event: Event): void {
     this.searchTerm.set((event.target as HTMLInputElement).value);
@@ -214,16 +284,29 @@ export class CajaVentas {
     this.page.set(1);
   }
 
-  onFecha(event: Event): void {
-    this.fecha.set((event.target as HTMLSelectElement).value);
+  onDesde(event: Event): void {
+    this.desde.set(fechaISO((event.target as HTMLInputElement).value));
     this.page.set(1);
+    this.cargarComprobantes();
+    this.cargarResumen();
+  }
+
+  onHasta(event: Event): void {
+    this.hasta.set(fechaISO((event.target as HTMLInputElement).value));
+    this.page.set(1);
+    this.cargarComprobantes();
+    this.cargarResumen();
   }
 
   resetFilters(): void {
+    const hoy = fechaISO(new Date());
     this.searchTerm.set('');
     this.categoria.set('todas');
-    this.fecha.set('01 oct 2026');
+    this.desde.set(hoy);
+    this.hasta.set(hoy);
     this.page.set(1);
+    this.cargarComprobantes();
+    this.cargarResumen();
   }
 
   goToPage(page: number): void {
@@ -233,16 +316,16 @@ export class CajaVentas {
     this.page.set(page);
   }
 
-  select(row: Comprobante): void {
+  select(row: ComprobanteFila): void {
     this.selectedId.set(row.id);
   }
 
-  subtotal(row: Comprobante): string {
-    return this.money(Math.round(row.total / 1.18 * 100) / 100);
+  subtotal(row: ComprobanteFila): string {
+    return this.money(row.gravado);
   }
 
-  igv(row: Comprobante): string {
-    return this.money(Math.round((row.total - row.total / 1.18) * 100) / 100);
+  igv(row: ComprobanteFila): string {
+    return this.money(row.igv);
   }
 
   money(value: number): string {
@@ -259,15 +342,157 @@ export class CajaVentas {
   }
 
   onLogout(): void {
+    this.sesion.cerrarSesion();
     void this.router.navigate(['/']);
   }
 
-  private toFechaKey(label: string): string {
-    const map: Record<string, string> = {
-      '01 oct 2026': '01/10/2026',
-      '30 sep 2026': '30/09/2026',
-      '29 sep 2026': '29/09/2026',
+  abrirVenta(): void {
+    this.formError.set('');
+    this.formClienteId.set(this.clientesDelFormulario()[0]?.id ?? null);
+    this.formTipoPago.set('EFECTIVO');
+    this.formMontoRecibido.set(null);
+    this.modalVentaAbierto.set(true);
+  }
+
+  cerrarVenta(): void {
+    this.modalVentaAbierto.set(false);
+    this.formError.set('');
+  }
+
+  onFormPedido(event: Event): void {
+    this.formPedidoId.set(Number((event.target as HTMLSelectElement).value));
+  }
+
+  onTipoCliente(event: Event): void {
+    this.formTipoCliente.set((event.target as HTMLSelectElement).value as TipoCliente);
+    this.formClienteId.set(this.clientesDelFormulario()[0]?.id ?? null);
+  }
+
+  onFormCliente(event: Event): void {
+    this.formClienteId.set(Number((event.target as HTMLSelectElement).value));
+  }
+
+  onFormTipoPago(event: Event): void {
+    this.formTipoPago.set((event.target as HTMLSelectElement).value as TipoPago);
+  }
+
+  onFormMonto(event: Event): void {
+    const valor = Number((event.target as HTMLInputElement).value);
+    this.formMontoRecibido.set(Number.isFinite(valor) ? valor : null);
+  }
+
+  emitirComprobante(): void {
+    const pedidoId = this.formPedidoId();
+    const clienteId = this.formClienteId();
+    const montoRecibido = this.formMontoRecibido();
+    const cajeroId = this.sesion.empleadoId();
+
+    if (!pedidoId) {
+      this.formError.set('Selecciona un pedido entregado.');
+      return;
+    }
+    if (!clienteId) {
+      this.formError.set('Selecciona un cliente.');
+      return;
+    }
+    if (cajeroId === null) {
+      this.formError.set('La sesión no tiene un cajero asociado.');
+      return;
+    }
+    if (montoRecibido === null || montoRecibido <= 0) {
+      this.formError.set('Ingresa un monto recibido mayor a cero.');
+      return;
+    }
+
+    const esNatural = this.formTipoCliente() === 'natural';
+    this.formError.set('');
+    this.cajaService
+      .emitir({
+        pedidoId,
+        cajeroId,
+        tipoPago: this.formTipoPago(),
+        montoRecibido,
+        clienteNaturalId: esNatural ? clienteId : null,
+        clienteJuridicoId: esNatural ? null : clienteId,
+      })
+      .subscribe({
+        next: (comprobante) => {
+          this.ultimoComprobante.set(comprobante);
+          this.cerrarVenta();
+          this.cargarComprobantes();
+          this.cargarResumen();
+          this.notificaciones.exito(`Comprobante ${this.numeroComprobante(comprobante)} emitido.`);
+        },
+        error: () => this.notificaciones.error('No se pudo emitir el comprobante.'),
+      });
+  }
+
+  proximamente(funcion: string): void {
+    this.notificaciones.info(`${funcion} estará disponible próximamente.`);
+  }
+
+  numeroComprobante(comprobante: Comprobante): string {
+    return (
+      comprobante.numeroComprobante ??
+      `${comprobante.clienteJuridicoId ? 'F' : 'B'}${String(comprobante.id).padStart(5, '0')}`
+    );
+  }
+
+  private cargarComprobantes(): void {
+    this.cajaService.listar(this.desde(), this.hasta()).subscribe({
+      next: (respuesta) => {
+        this.comprobantes.set(respuesta.map((item) => this.mapearComprobante(item)));
+        if (!this.selectedId() && this.comprobantes().length) {
+          this.selectedId.set(this.comprobantes()[0].id);
+        }
+      },
+      error: () => this.comprobantes.set([]),
+    });
+  }
+
+  private cargarResumen(): void {
+    this.cajaService.resumen(this.desde(), this.hasta()).subscribe({
+      next: (resumen) => this.resumen.set(resumen),
+      error: () => this.resumen.set(null),
+    });
+  }
+
+  private mapearComprobante(comprobante: Comprobante): ComprobanteFila {
+    const id = String(comprobante.id);
+    const clienteNatural = this.clientesNaturales().find(
+      (cliente) => cliente.id === comprobante.clienteNaturalId
+    );
+    const clienteJuridico = this.clientesJuridicos().find(
+      (cliente) => cliente.id === comprobante.clienteJuridicoId
+    );
+    const cliente = clienteNatural ?? clienteJuridico;
+    return {
+      id,
+      comprobante: this.numeroComprobante(comprobante),
+      tipo: clienteJuridico || comprobante.clienteJuridicoId ? 'Factura' : 'Boleta',
+      cliente: comprobante.cliente ?? cliente?.nombre ?? 'Cliente registrado',
+      documento: comprobante.documento ?? (cliente ? `${cliente.tipoDocumento} ${cliente.numeroDocumento}` : '—'),
+      email: comprobante.email ?? cliente?.email ?? '—',
+      pago: ETIQUETAS_PAGO[comprobante.tipoPago] ?? comprobante.tipoPago,
+      metodo: ETIQUETAS_PAGO[comprobante.tipoPago] ?? comprobante.tipoPago,
+      total: comprobante.precioTotal ?? 0,
+      estado: comprobante.estado ?? 'Emitido',
+      fecha: this.fechaLegible(comprobante.fechaEmision),
+      hora: String(comprobante.horaEmision ?? '').slice(0, 5) || '—',
+      cdr: String(comprobante.horaEmision ?? '').slice(0, 5) || '—',
+      gravado: comprobante.gravado ?? 0,
+      igv: comprobante.igv ?? 0,
+      vuelto: comprobante.vueltoPago ?? 0,
+      montoRecibido: comprobante.montoRecibido ?? 0,
+      pedidoId: comprobante.pedidoId ?? null,
     };
-    return map[label] ?? label;
+  }
+
+  private fechaLegible(valor: string | null | undefined): string {
+    if (!valor) {
+      return '—';
+    }
+    const partes = valor.slice(0, 10).split('-');
+    return partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : valor;
   }
 }

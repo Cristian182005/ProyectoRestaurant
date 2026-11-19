@@ -4,9 +4,11 @@ import com.elhornero.backend.dto.AuthResponseDTO;
 import com.elhornero.backend.dto.LoginRequest;
 import com.elhornero.backend.dto.RegistroUsuarioDTO;
 import com.elhornero.backend.dto.UsuarioResponseDTO;
+import com.elhornero.backend.entity.Empleado;
 import com.elhornero.backend.entity.Persona;
 import com.elhornero.backend.entity.Usuario;
 import com.elhornero.backend.exception.DatoInvalidoException;
+import com.elhornero.backend.repository.EmpleadoRepository;
 import com.elhornero.backend.repository.UsuarioRepository;
 import com.elhornero.backend.security.JwtServicio;
 import com.elhornero.backend.security.RolUsuario;
@@ -24,13 +26,16 @@ public class AuthService {
 
 	private final UsuarioService usuarioService;
 	private final UsuarioRepository usuarioRepository;
+	private final EmpleadoRepository empleadoRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtServicio jwtServicio;
 
 	public AuthService(UsuarioService usuarioService, UsuarioRepository usuarioRepository,
-			PasswordEncoder passwordEncoder, JwtServicio jwtServicio) {
+			EmpleadoRepository empleadoRepository, PasswordEncoder passwordEncoder,
+			JwtServicio jwtServicio) {
 		this.usuarioService = usuarioService;
 		this.usuarioRepository = usuarioRepository;
+		this.empleadoRepository = empleadoRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtServicio = jwtServicio;
 	}
@@ -56,8 +61,10 @@ public class AuthService {
 		// El rol debe ser soportado; si el dato esta corrupto no se emite token.
 		RolUsuario.desde(persona.getRol());
 		String token = jwtServicio.generarToken(usuario);
+		Empleado empleado = empleadoRepository.findById(usuario.getId()).orElse(null);
+		Integer empleadoId = empleado == null ? null : empleado.getId();
 		return AuthResponseDTO.bearer(token, persona.getEmail(), persona.getRol(),
-				jwtServicio.fechaExpiracion());
+				jwtServicio.fechaExpiracion(), usuario.getId(), empleadoId);
 	}
 
 	private BadCredentialsException credencialesInvalidas() {

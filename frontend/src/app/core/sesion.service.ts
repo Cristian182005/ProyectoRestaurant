@@ -5,6 +5,8 @@ export interface Sesion {
   email: string;
   rol: string;
   expiraEn: string;
+  id: number;
+  empleadoId: number | null;
 }
 
 const CLAVE_SESION = 'elhornero.sesion';
@@ -18,6 +20,8 @@ export class SesionService {
   readonly token = signal<string | null>(null);
   readonly email = signal<string | null>(null);
   readonly rol = signal<string | null>(null);
+  readonly id = signal<number | null>(null);
+  readonly empleadoId = signal<number | null>(null);
 
   readonly logueado = computed(() => this.token() !== null);
 
@@ -33,6 +37,8 @@ export class SesionService {
     this.token.set(sesion.token);
     this.email.set(sesion.email);
     this.rol.set(sesion.rol);
+    this.id.set(sesion.id);
+    this.empleadoId.set(sesion.empleadoId);
   }
 
   cerrarSesion(): void {
@@ -40,6 +46,8 @@ export class SesionService {
     this.token.set(null);
     this.email.set(null);
     this.rol.set(null);
+    this.id.set(null);
+    this.empleadoId.set(null);
   }
 
   private restaurar(): void {
@@ -58,7 +66,6 @@ export class SesionService {
 
       const expiracion = Date.parse(sesion.expiraEn ?? '');
       if (Number.isFinite(expiracion) && expiracion <= Date.now()) {
-        // Token vencido: se limpia la sesión.
         this.limpiarAlmacen();
         return;
       }
@@ -66,6 +73,8 @@ export class SesionService {
       this.token.set(sesion.token);
       this.email.set(sesion.email);
       this.rol.set(sesion.rol);
+      this.id.set(sesion.id ?? null);
+      this.empleadoId.set(sesion.empleadoId ?? null);
     } catch {
       this.limpiarAlmacen();
     }

@@ -1,7 +1,17 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import { SidebarComponent } from '../shared/sidebar/sidebar.component';
+import {
+  InventarioService,
+  InsumoBackend,
+  Merma,
+  Ingreso,
+} from '../core/inventario.service';
+import { ClienteService, ProveedorResponse } from '../core/cliente.service';
+import { SesionService } from '../core/sesion.service';
+import { NotificationService } from '../core/notification.service';
 
 type EstadoInsumo = 'DISPONIBLE' | 'CRÍTICO' | 'BAJO';
 type EstadoFiltro = 'todos' | EstadoInsumo;
@@ -11,6 +21,7 @@ type KpiTone = 'terra' | 'danger';
 
 interface Insumo {
   codigo: string;
+  id: number;
   nombre: string;
   categoria: string;
   existencia: number;
@@ -45,175 +56,36 @@ interface KpiItem {
 })
 export class Inventario {
   private readonly router = inject(Router);
-
-  private avisoTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly inventarioService = inject(InventarioService);
+  private readonly clienteService = inject(ClienteService);
+  private readonly sesion = inject(SesionService);
+  readonly notificaciones = inject(NotificationService);
 
   readonly sidebarOpen = signal(false);
   readonly activeSection = signal('Inventario');
-  readonly dateLabel = 'Jue, 01 oct 2026';
+  readonly dateLabel = new Intl.DateTimeFormat('es-PE', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date());
 
   readonly searchTerm = signal('');
   readonly categoria = signal<CategoriaFiltro>('todas');
   readonly estadoFiltro = signal<EstadoFiltro>('todos');
 
   readonly modalAbierto = signal(false);
-  readonly formCodigo = signal('INS-101');
+  readonly formCodigo = signal('');
   readonly formTipo = signal<TipoMovimiento>('salida');
+  readonly formProveedorId = signal<number | null>(null);
   readonly formCantidad = signal<number | null>(null);
   readonly formMotivo = signal('');
   readonly formError = signal('');
+  readonly cargando = signal(false);
 
-  readonly aviso = signal('');
-
-  readonly valorInventario = signal(38420);
-  readonly movimientosHoy = signal(124);
-
-  readonly insumos = signal<Insumo[]>([
-    {
-      codigo: 'INS-101',
-      nombre: 'Bife ancho crudo',
-      categoria: 'Carnes',
-      existencia: 18.6,
-      unidad: 'kg',
-      stockMinimo: 12,
-      estado: 'DISPONIBLE',
-      actualizado: '20:43',
-      costo: 32,
-      pedidoSugerido: 0,
-    },
-    {
-      codigo: 'INS-102',
-      nombre: 'Lomo fino',
-      categoria: 'Carnes',
-      existencia: 3.4,
-      unidad: 'kg',
-      stockMinimo: 5,
-      estado: 'CRÍTICO',
-      actualizado: '19:58',
-      costo: 48,
-      pedidoSugerido: 8,
-    },
-    {
-      codigo: 'INS-103',
-      nombre: 'Corazón de res',
-      categoria: 'Carnes',
-      existencia: 9.8,
-      unidad: 'kg',
-      stockMinimo: 6,
-      estado: 'DISPONIBLE',
-      actualizado: '20:43',
-      costo: 18,
-      pedidoSugerido: 0,
-    },
-    {
-      codigo: 'INS-104',
-      nombre: 'Chorizo artesanal',
-      categoria: 'Embutidos',
-      existencia: 10,
-      unidad: 'und',
-      stockMinimo: 18,
-      estado: 'CRÍTICO',
-      actualizado: '20:43',
-      costo: 9,
-      pedidoSugerido: 30,
-    },
-    {
-      codigo: 'INS-105',
-      nombre: 'Carbón vegetal',
-      categoria: 'Operación',
-      existencia: 8,
-      unidad: 'kg',
-      stockMinimo: 12,
-      estado: 'CRÍTICO',
-      actualizado: '18:10',
-      costo: 6.5,
-      pedidoSugerido: 20,
-    },
-    {
-      codigo: 'INS-106',
-      nombre: 'Papa amarilla',
-      categoria: 'Verduras',
-      existencia: 22.5,
-      unidad: 'kg',
-      stockMinimo: 10,
-      estado: 'DISPONIBLE',
-      actualizado: '17:45',
-      costo: 3.2,
-      pedidoSugerido: 0,
-    },
-    {
-      codigo: 'INS-107',
-      nombre: 'Queso provolone',
-      categoria: 'Lácteos',
-      existencia: 7.2,
-      unidad: 'kg',
-      stockMinimo: 4,
-      estado: 'DISPONIBLE',
-      actualizado: '16:30',
-      costo: 34,
-      pedidoSugerido: 0,
-    },
-    {
-      codigo: 'INS-108',
-      nombre: 'Ají panca',
-      categoria: 'Abarrotes',
-      existencia: 4.6,
-      unidad: 'kg',
-      stockMinimo: 3,
-      estado: 'BAJO',
-      actualizado: '15:20',
-      costo: 12,
-      pedidoSugerido: 0,
-    },
-  ]);
-
-  readonly movimientos = signal<Movimiento[]>([
-    {
-      hora: '20:43',
-      insumo: 'Bife ancho crudo',
-      detalle: 'Venta C-1048',
-      variacion: '-0.70 kg',
-      signo: 'negativo',
-    },
-    {
-      hora: '20:43',
-      insumo: 'Corazón de res',
-      detalle: 'Venta C-1048',
-      variacion: '-0.45 kg',
-      signo: 'negativo',
-    },
-    {
-      hora: '20:43',
-      insumo: 'Chorizo artesanal',
-      detalle: 'Venta C-1048',
-      variacion: '-2 und',
-      signo: 'negativo',
-    },
-    {
-      hora: '19:58',
-      insumo: 'Lomo fino',
-      detalle: 'Venta C-1042',
-      variacion: '-0.30 kg',
-      signo: 'negativo',
-    },
-    {
-      hora: '18:10',
-      insumo: 'Carbón vegetal',
-      detalle: 'Salida a parrilla',
-      variacion: '-4 kg',
-      signo: 'negativo',
-    },
-  ]);
-
-  readonly categoriaOptions: { value: CategoriaFiltro; label: string }[] = [
-    { value: 'todas', label: 'Todas' },
-    { value: 'Carnes', label: 'Carnes' },
-    { value: 'Embutidos', label: 'Embutidos' },
-    { value: 'Operación', label: 'Operación' },
-    { value: 'Verduras', label: 'Verduras' },
-    { value: 'Lácteos', label: 'Lácteos' },
-    { value: 'Abarrotes', label: 'Abarrotes' },
-  ];
+  readonly insumos = signal<Insumo[]>([]);
+  readonly movimientos = signal<Movimiento[]>([]);
+  readonly proveedores = signal<ProveedorResponse[]>([]);
 
   readonly estadoOptions: { value: EstadoFiltro; label: string }[] = [
     { value: 'todos', label: 'Todos' },
@@ -223,14 +95,24 @@ export class Inventario {
   ];
 
   readonly tipoOptions: { value: TipoMovimiento; label: string }[] = [
-    { value: 'salida', label: 'Salida (venta / consumo)' },
+    { value: 'salida', label: 'Salida (merma / consumo)' },
     { value: 'entrada', label: 'Entrada (compra / devolución)' },
   ];
+
+  readonly categoriaOptions = computed<{ value: CategoriaFiltro; label: string }[]>(() => {
+    const categorias = [...new Set(this.insumos().map((insumo) => insumo.categoria))];
+    return [
+      { value: 'todas', label: 'Todas' },
+      ...categorias.map((categoria) => ({ value: categoria, label: categoria })),
+    ];
+  });
 
   readonly kpis = computed<KpiItem[]>(() => [
     {
       label: 'Valor de inventario',
-      value: this.money(this.valorInventario()),
+      value: this.money(
+        this.insumos().reduce((total, item) => total + item.existencia * item.costo, 0)
+      ),
       tone: 'terra',
       icon: [
         'M12 6a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
@@ -240,7 +122,7 @@ export class Inventario {
     },
     {
       label: 'Insumos activos',
-      value: '86',
+      value: String(this.insumos().length),
       tone: 'terra',
       icon: ['M21 8l-9-5-9 5 9 5 9-5z', 'M3 8v8l9 5 9-5V8', 'M12 13v8'],
     },
@@ -256,7 +138,7 @@ export class Inventario {
     },
     {
       label: 'Movimientos hoy',
-      value: String(this.movimientosHoy()),
+      value: String(this.movimientos().length),
       tone: 'terra',
       icon: ['M4 8h13', 'm14 5 3 3-3 3', 'M20 16H7', 'm10 13-3 3 3 3'],
     },
@@ -296,9 +178,34 @@ export class Inventario {
     });
   });
 
-  readonly criticos = computed(() =>
-    this.insumos().filter((insumo) => insumo.estado === 'CRÍTICO')
-  );
+  readonly criticos = computed(() => this.insumos().filter((insumo) => insumo.estado === 'CRÍTICO'));
+
+  constructor() {
+    this.cargarDatos();
+  }
+
+  cargarDatos(): void {
+    this.cargando.set(true);
+    forkJoin({
+      insumos: this.inventarioService.listarInsumos(),
+      stockBajo: this.inventarioService.listarStockBajo(),
+      mermas: this.inventarioService.listarMermas(),
+      ingresos: this.inventarioService.listarIngresos(),
+    }).subscribe({
+      next: ({ insumos, stockBajo, mermas, ingresos }) => {
+        const mapeados = this.mapearInsumos(insumos, stockBajo);
+        this.insumos.set(mapeados);
+        this.movimientos.set(this.mapearMovimientos(mermas, ingresos, mapeados));
+        this.cargando.set(false);
+      },
+      error: () => this.cargando.set(false),
+    });
+
+    this.clienteService.listarProveedores().subscribe({
+      next: (proveedores) => this.proveedores.set(proveedores),
+      error: () => this.proveedores.set([]),
+    });
+  }
 
   onSearch(event: Event): void {
     this.searchTerm.set((event.target as HTMLInputElement).value);
@@ -319,8 +226,9 @@ export class Inventario {
   }
 
   abrirModal(codigo?: string): void {
-    this.formCodigo.set(codigo ?? this.insumos()[0].codigo);
+    this.formCodigo.set(codigo ?? this.insumos()[0]?.codigo ?? '');
     this.formTipo.set('salida');
+    this.formProveedorId.set(this.proveedores()[0]?.id ?? null);
     this.formCantidad.set(null);
     this.formMotivo.set('');
     this.formError.set('');
@@ -340,6 +248,10 @@ export class Inventario {
     this.formTipo.set((event.target as HTMLSelectElement).value as TipoMovimiento);
   }
 
+  onFormProveedor(event: Event): void {
+    this.formProveedorId.set(Number((event.target as HTMLSelectElement).value));
+  }
+
   onFormCantidad(event: Event): void {
     const raw = (event.target as HTMLInputElement).value;
     const value = Number(raw);
@@ -353,6 +265,7 @@ export class Inventario {
   registrarMovimiento(): void {
     const insumo = this.insumos().find((item) => item.codigo === this.formCodigo());
     const cantidad = this.formCantidad();
+    const empleadoId = this.sesion.empleadoId();
 
     if (!insumo) {
       this.formError.set('Selecciona un insumo válido.');
@@ -362,62 +275,66 @@ export class Inventario {
       this.formError.set('Ingresa una cantidad mayor a cero.');
       return;
     }
+    if (empleadoId === null) {
+      this.formError.set('La sesión no tiene un empleado asociado.');
+      return;
+    }
     if (this.formTipo() === 'salida' && cantidad > insumo.existencia) {
       this.formError.set(`Solo hay ${this.cantidadTexto(insumo.existencia)} ${insumo.unidad} disponibles.`);
       return;
     }
 
-    const delta = this.formTipo() === 'entrada' ? cantidad : -cantidad;
-    const existencia = Math.max(0, Math.round((insumo.existencia + delta) * 100) / 100);
-    const hora = this.horaActual();
+    const motivo = this.formMotivo().trim() || (this.formTipo() === 'salida' ? 'Merma' : 'Compra');
+    this.formError.set('');
 
-    this.insumos.update((list) =>
-      list.map((item) =>
-        item.codigo === insumo.codigo
-          ? {
-              ...item,
-              existencia,
-              estado: this.calcularEstado(existencia, item.stockMinimo),
-              actualizado: hora,
-            }
-          : item
-      )
-    );
+    if (this.formTipo() === 'salida') {
+      this.inventarioService
+        .registrarMerma({
+          insumoId: insumo.id,
+          cantidad,
+          motivo,
+          observacion: this.formMotivo().trim(),
+          empleadoId,
+        })
+        .subscribe({
+          next: () => {
+            this.cerrarModal();
+            this.notificaciones.exito(`Salida registrada: ${insumo.nombre}.`);
+            this.cargarDatos();
+          },
+          error: () => this.notificaciones.error('No se pudo registrar la salida.'),
+        });
+      return;
+    }
 
-    this.valorInventario.update((valor) => Math.max(0, Math.round(valor + delta * insumo.costo)));
-    this.movimientosHoy.update((total) => total + 1);
-
-    const motivo = this.formMotivo().trim();
-    const variacion = `${delta > 0 ? '+' : '-'}${this.cantidadTexto(Math.abs(delta))} ${insumo.unidad}`;
-
-    this.movimientos.update((list) =>
-      [
-        {
-          hora,
-          insumo: insumo.nombre,
-          detalle: motivo || (delta > 0 ? 'Entrada de compra' : 'Salida registrada'),
-          variacion,
-          signo: (delta > 0 ? 'positivo' : 'negativo') as Movimiento['signo'],
+    const proveedorId = this.formProveedorId();
+    if (!proveedorId) {
+      this.formError.set('Selecciona un proveedor.');
+      return;
+    }
+    this.inventarioService
+      .registrarIngreso({
+        proveedorId,
+        empleadoId,
+        detalles: [{ insumoId: insumo.id, cantidad }],
+      })
+      .subscribe({
+        next: () => {
+          this.cerrarModal();
+          this.notificaciones.exito(`Entrada registrada: ${insumo.nombre}.`);
+          this.cargarDatos();
         },
-        ...list,
-      ].slice(0, 8)
-    );
-
-    this.cerrarModal();
-    this.mostrarAviso(
-      delta > 0
-        ? `Entrada registrada: ${insumo.nombre} +${variacion.slice(1)}`
-        : `Salida registrada: ${insumo.nombre} ${variacion}`
-    );
+        error: () => this.notificaciones.error('No se pudo registrar la entrada.'),
+      });
   }
 
   crearOrdenCompra(): void {
     const total = this.criticos().length;
     if (total === 0) {
-      this.mostrarAviso('No hay insumos críticos para reponer.');
+      this.notificaciones.info('No hay insumos críticos para reponer.');
       return;
     }
-    this.mostrarAviso(`Orden de compra creada para ${total} insumos críticos.`);
+    this.notificaciones.exito(`Orden de compra creada para ${total} insumos críticos.`);
   }
 
   exportar(): void {
@@ -453,7 +370,7 @@ export class Inventario {
     link.click();
     URL.revokeObjectURL(url);
 
-    this.mostrarAviso(`Exportados ${filas.length} insumos a CSV.`);
+    this.notificaciones.exito(`Exportados ${filas.length} insumos a CSV.`);
   }
 
   pedidoLabel(insumo: Insumo): string {
@@ -484,7 +401,60 @@ export class Inventario {
   }
 
   onLogout(): void {
+    this.sesion.cerrarSesion();
     void this.router.navigate(['/']);
+  }
+
+  private mapearInsumos(insumos: InsumoBackend[], stockBajo: InsumoBackend[]): Insumo[] {
+    const idsBajos = new Set(stockBajo.map((item) => item.id));
+    return insumos.map((insumo) => {
+      const existencia = insumo.stockActual ?? 0;
+      const stockMinimo = insumo.stockMinimo ?? 0;
+      return {
+        id: insumo.id,
+        codigo: `INS-${insumo.id}`,
+        nombre: insumo.nombre,
+        categoria: 'General',
+        existencia,
+        unidad: insumo.unidadMedida || 'und',
+        stockMinimo,
+        estado: idsBajos.has(insumo.id)
+          ? 'CRÍTICO'
+          : this.calcularEstado(existencia, stockMinimo),
+        actualizado: '—',
+        costo: 0,
+        pedidoSugerido: existencia < stockMinimo ? Math.ceil(stockMinimo - existencia) : 0,
+      };
+    });
+  }
+
+  private mapearMovimientos(
+    mermas: Merma[],
+    ingresos: Ingreso[],
+    insumos: Insumo[]
+  ): Movimiento[] {
+    const nombreDe = (id: number | null | undefined): string =>
+      insumos.find((item) => item.id === id)?.nombre ?? 'Insumo';
+
+    const salidas = (mermas ?? []).map((merma) => ({
+      hora: this.horaDe(merma.fechaRegistro),
+      insumo: merma.insumo?.nombre ?? nombreDe(merma.insumoId ?? merma.insumo?.id),
+      detalle: [merma.motivo, merma.observacion].filter(Boolean).join(' · ') || 'Merma registrada',
+      variacion: `-${this.cantidadTexto(merma.cantidad)}`,
+      signo: 'negativo' as const,
+    }));
+
+    const entradas = (ingresos ?? []).flatMap((ingreso) =>
+      (ingreso.detalles ?? []).map((detalle) => ({
+        hora: this.horaDe(ingreso.fechaIngreso),
+        insumo: nombreDe(detalle.insumoId),
+        detalle: `Ingreso #${ingreso.id}`,
+        variacion: `+${this.cantidadTexto(detalle.cantidad)}`,
+        signo: 'positivo' as const,
+      }))
+    );
+
+    return [...salidas, ...entradas].slice(0, 12);
   }
 
   private calcularEstado(existencia: number, stockMinimo: number): EstadoInsumo {
@@ -497,16 +467,10 @@ export class Inventario {
     return 'DISPONIBLE';
   }
 
-  private horaActual(): string {
-    const now = new Date();
-    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  }
-
-  private mostrarAviso(mensaje: string): void {
-    this.aviso.set(mensaje);
-    if (this.avisoTimer) {
-      clearTimeout(this.avisoTimer);
+  private horaDe(valor: string | null | undefined): string {
+    if (!valor) {
+      return '—';
     }
-    this.avisoTimer = setTimeout(() => this.aviso.set(''), 3200);
+    return valor.length >= 16 ? valor.slice(11, 16) : '—';
   }
 }
