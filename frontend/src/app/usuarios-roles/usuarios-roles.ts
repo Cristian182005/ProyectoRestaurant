@@ -44,7 +44,7 @@ const DESCRIPCIONES: Record<RolUsuario, string> = {
 
 const PERMISOS_BASE: Record<RolUsuario, Permiso[]> = {
   ADMINISTRADOR: [
-    { clave: 'dashboard', label: 'Resumen', habilitado: true },
+    { clave: 'dashboard', label: 'Dashboard', habilitado: true },
     { clave: 'salon', label: 'Salón y mesas', habilitado: true },
     { clave: 'pedidos', label: 'Comandas y pedidos', habilitado: true },
     { clave: 'caja', label: 'Caja y comprobantes', habilitado: true },
@@ -54,7 +54,7 @@ const PERMISOS_BASE: Record<RolUsuario, Permiso[]> = {
     { clave: 'usuarios', label: 'Usuarios y permisos', habilitado: true },
   ],
   CAJERO: [
-    { clave: 'dashboard', label: 'Resumen', habilitado: true },
+    { clave: 'dashboard', label: 'Dashboard', habilitado: true },
     { clave: 'salon', label: 'Salón y mesas', habilitado: false },
     { clave: 'pedidos', label: 'Comandas y pedidos', habilitado: false },
     { clave: 'caja', label: 'Caja y comprobantes', habilitado: true },
@@ -64,7 +64,7 @@ const PERMISOS_BASE: Record<RolUsuario, Permiso[]> = {
     { clave: 'usuarios', label: 'Usuarios y permisos', habilitado: false },
   ],
   MOZO: [
-    { clave: 'dashboard', label: 'Resumen', habilitado: true },
+    { clave: 'dashboard', label: 'Dashboard', habilitado: true },
     { clave: 'salon', label: 'Salón y mesas', habilitado: true },
     { clave: 'pedidos', label: 'Comandas y pedidos', habilitado: true },
     { clave: 'caja', label: 'Caja y comprobantes', habilitado: false },
