@@ -63,7 +63,7 @@ export class ProductosRecetas {
       precio: 99,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=640&q=60',
+        '/platos/par-001.jpg',
       porciones: 1,
       minutos: 18,
       preparacion:
@@ -85,7 +85,7 @@ export class ProductosRecetas {
       precio: 149,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=640&q=60',
+        '/platos/par-002.jpg',
       porciones: 2,
       minutos: 35,
       preparacion:
@@ -107,7 +107,7 @@ export class ProductosRecetas {
       precio: 119,
       estado: 'pausado',
       imagen:
-        'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=640&q=60',
+        '/platos/par-003.jpg',
       porciones: 1,
       minutos: 22,
       preparacion:
@@ -129,7 +129,7 @@ export class ProductosRecetas {
       precio: 109,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=640&q=60',
+        '/platos/par-004.jpg',
       porciones: 1,
       minutos: 16,
       preparacion:
@@ -150,7 +150,7 @@ export class ProductosRecetas {
       precio: 89,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&w=640&q=60',
+        '/platos/par-005.jpg',
       porciones: 1,
       minutos: 40,
       preparacion:
@@ -171,7 +171,7 @@ export class ProductosRecetas {
       precio: 79,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=640&q=60',
+        '/platos/par-006.jpg',
       porciones: 2,
       minutos: 45,
       preparacion:
@@ -192,7 +192,7 @@ export class ProductosRecetas {
       precio: 59,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=640&q=60',
+        '/platos/ent-001.jpg',
       porciones: 1,
       minutos: 25,
       preparacion:
@@ -214,7 +214,7 @@ export class ProductosRecetas {
       precio: 32,
       estado: 'pausado',
       imagen:
-        'https://images.unsplash.com/photo-1613514785940-daed07799d9b?auto=format&fit=crop&w=640&q=60',
+        '/platos/ent-002.jpg',
       porciones: 1,
       minutos: 12,
       preparacion:
@@ -235,7 +235,7 @@ export class ProductosRecetas {
       precio: 42,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=640&q=60',
+        '/platos/ent-003.jpg',
       porciones: 1,
       minutos: 10,
       preparacion:
@@ -257,7 +257,7 @@ export class ProductosRecetas {
       precio: 18,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1565299507177-b0ac66763828?auto=format&fit=crop&w=640&q=60',
+        '/platos/ent-004.jpg',
       porciones: 1,
       minutos: 20,
       preparacion:
@@ -278,7 +278,7 @@ export class ProductosRecetas {
       precio: 22,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=640&q=60',
+        '/platos/ent-005.jpg',
       porciones: 1,
       minutos: 15,
       preparacion:
@@ -299,7 +299,7 @@ export class ProductosRecetas {
       precio: 20,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=640&q=60',
+        '/platos/ent-006.jpg',
       porciones: 1,
       minutos: 15,
       preparacion:
@@ -320,7 +320,7 @@ export class ProductosRecetas {
       precio: 12,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=640&q=60',
+        '/platos/gru-001.jpg',
       porciones: 1,
       minutos: 8,
       preparacion:
@@ -339,7 +339,7 @@ export class ProductosRecetas {
       precio: 12,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1541544181051-e46607bc22a4?auto=format&fit=crop&w=640&q=60',
+        '/platos/gru-002.jpg',
       porciones: 1,
       minutos: 10,
       preparacion:
@@ -358,7 +358,7 @@ export class ProductosRecetas {
       precio: 14,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=640&q=60',
+        '/platos/gru-003.jpg',
       porciones: 1,
       minutos: 6,
       preparacion:
@@ -379,7 +379,7 @@ export class ProductosRecetas {
       precio: 14,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?auto=format&fit=crop&w=640&q=60',
+        '/platos/gru-004.jpg',
       porciones: 1,
       minutos: 9,
       preparacion:
@@ -398,7 +398,7 @@ export class ProductosRecetas {
       precio: 10,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=640&q=60',
+        '/platos/beb-001.jpg',
       porciones: 4,
       minutos: 30,
       preparacion:
@@ -418,7 +418,7 @@ export class ProductosRecetas {
       precio: 12,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1621263764928-df1444c5e859?auto=format&fit=crop&w=640&q=60',
+        '/platos/beb-002.jpg',
       porciones: 2,
       minutos: 5,
       preparacion:
@@ -438,7 +438,7 @@ export class ProductosRecetas {
       precio: 16,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1608270586620-248524c67de9?auto=format&fit=crop&w=640&q=60',
+        '/platos/beb-003.jpg',
       porciones: 1,
       minutos: 2,
       preparacion: 'Servir entre 6 y 8 °C en vaso frío, sin vertir el sedimentio del fondo.',
@@ -455,7 +455,7 @@ export class ProductosRecetas {
       precio: 6,
       estado: 'disponible',
       imagen:
-        'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?auto=format&fit=crop&w=640&q=60',
+        '/platos/beb-004.jpg',
       porciones: 1,
       minutos: 1,
       preparacion: 'Servir fría con hielo y rodaja de limón.',
