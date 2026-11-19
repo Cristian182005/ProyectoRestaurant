@@ -21,7 +21,7 @@ export class SidebarComponent {
   private readonly permisos = inject(PermisosService);
   readonly sesion = inject(SesionService);
 
-  @Input() activeSection = 'Resumen';
+  @Input() activeSection = 'Dashboard';
   @Input() open = false;
 
   @Output() sectionChange = new EventEmitter<string>();
@@ -30,7 +30,7 @@ export class SidebarComponent {
 
   readonly navItems: NavItem[] = [
     {
-      label: 'Resumen',
+      label: 'Dashboard',
       route: '/dashboard',
       modulo: 'dashboard',
       icon: ['M4 4h6v6H4z', 'M14 4h6v6h-6z', 'M14 14h6v6h-6z', 'M4 14h6v6H4z'],
@@ -158,7 +158,7 @@ export class SidebarComponent {
       return 'Usuarios y roles';
     }
     if (this.router.url.startsWith('/dashboard')) {
-      return 'Resumen';
+      return 'Dashboard';
     }
     return null;
   }

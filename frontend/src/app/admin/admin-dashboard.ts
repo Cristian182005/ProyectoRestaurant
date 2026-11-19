@@ -48,7 +48,7 @@ export class AdminDashboard {
   private readonly sesion = inject(SesionService);
 
   readonly sidebarOpen = signal(false);
-  readonly activeSection = signal('Resumen');
+  readonly activeSection = signal('Dashboard');
   readonly dateLabel = 'Jue, 01 oct 2026';
 
   readonly kpis: KpiCard[] = [
