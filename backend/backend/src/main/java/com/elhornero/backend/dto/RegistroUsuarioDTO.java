@@ -11,6 +11,7 @@ public record RegistroUsuarioDTO(@NotBlank(message = "El correo es obligatorio")
 		@NotBlank(message = "La contrasena es obligatoria")
 		@Size(min = 6, max = 255, message = "La contrasena debe tener entre 6 y 255 caracteres")
 		String password,
+		@Size(max = 100, message = "El nombre no puede superar 100 caracteres") String nombre,
 		@Size(max = 20, message = "El telefono no puede superar 20 caracteres")
 		@Pattern(regexp = "^$|^\\+?[0-9 ()-]{7,20}$", message = "El telefono solo puede contener numeros, espacios, guiones, parentesis y el signo +")
 		String telefono,

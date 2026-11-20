@@ -49,9 +49,12 @@ public class SecurityConfig {
 						.authenticationEntryPoint(seguridadRespuestaHandler)
 						.accessDeniedHandler(seguridadRespuestaHandler))
 				.authorizeHttpRequests(auth -> auth
-						// Autenticacion publica
-						.requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
+						// Unico acceso publico: el inicio de sesion. El alta de
+						// usuarios es exclusiva del ADMINISTRADOR (/api/usuarios).
+						.requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
 						.requestMatchers("/error").permitAll()
+						// Gestion de usuarios y roles: solo administrador
+						.requestMatchers("/api/usuarios/**").hasRole("ADMINISTRADOR")
 						// Inventario y recetas: solo administrador
 						.requestMatchers("/api/insumos/**", "/api/ingresos/**",
 								"/api/mermas/**", "/api/ingredientes/**")

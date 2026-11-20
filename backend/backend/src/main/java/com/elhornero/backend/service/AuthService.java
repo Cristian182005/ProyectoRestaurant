@@ -2,12 +2,9 @@ package com.elhornero.backend.service;
 
 import com.elhornero.backend.dto.AuthResponseDTO;
 import com.elhornero.backend.dto.LoginRequest;
-import com.elhornero.backend.dto.RegistroUsuarioDTO;
-import com.elhornero.backend.dto.UsuarioResponseDTO;
 import com.elhornero.backend.entity.Empleado;
 import com.elhornero.backend.entity.Persona;
 import com.elhornero.backend.entity.Usuario;
-import com.elhornero.backend.exception.DatoInvalidoException;
 import com.elhornero.backend.repository.EmpleadoRepository;
 import com.elhornero.backend.repository.UsuarioRepository;
 import com.elhornero.backend.security.JwtServicio;
@@ -18,30 +15,24 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Fachada de autenticacion: registro de usuarios y validacion de
- * credenciales para emitir tokens JWT.
+ * Fachada de autenticacion: validacion de credenciales para emitir tokens
+ * JWT. El alta de usuarios la realiza el administrador desde UsuarioService.
  */
 @Service
 public class AuthService {
 
-	private final UsuarioService usuarioService;
 	private final UsuarioRepository usuarioRepository;
 	private final EmpleadoRepository empleadoRepository;
 	private final PasswordEncoder passwordEncoder;
 	private final JwtServicio jwtServicio;
 
-	public AuthService(UsuarioService usuarioService, UsuarioRepository usuarioRepository,
+	public AuthService(UsuarioRepository usuarioRepository,
 			EmpleadoRepository empleadoRepository, PasswordEncoder passwordEncoder,
 			JwtServicio jwtServicio) {
-		this.usuarioService = usuarioService;
 		this.usuarioRepository = usuarioRepository;
 		this.empleadoRepository = empleadoRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.jwtServicio = jwtServicio;
-	}
-
-	public UsuarioResponseDTO registrarse(RegistroUsuarioDTO request) {
-		return usuarioService.registrar(request);
 	}
 
 	/**

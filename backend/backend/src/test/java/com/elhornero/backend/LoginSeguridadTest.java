@@ -17,13 +17,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
- * Cubre el flujo completo de autenticacion: registro publico (solo MOZO y
- * CAJERO), login con emision de JWT y la matriz de autorizacion por rol. A
+ * Cubre el flujo de autenticacion (login con emision de JWT) y la matriz de
+ * autorizacion por rol. El alta de usuarios ya no es publica: vive en
+ * UsuarioGestionTest bajo /api/usuarios y solo para ADMINISTRADOR. A
  * diferencia del resto de pruebas, aqui la cadena de seguridad SI esta
  * activa (addFilters = true).
  */
 @AutoConfigureMockMvc(addFilters = true)
-class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
+class LoginSeguridadTest extends BasePruebaIntegracion {
 
 	private static final String CONTRASENA = "secreta123";
 
@@ -31,121 +32,12 @@ class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
 	private PasswordEncoder passwordEncoder;
 
 	// ------------------------------------------------------------------
-	// Registro
-	// ------------------------------------------------------------------
-
-	@Test
-	void registrarUsuarioMozoGuardaPasswordConBcrypt() throws Exception {
-		MvcResult creacion = mockMvc
-				.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
-						.content(cuerpoRegistro("mozo.registro@elhornero.pe", "MOZO")))
-				.andExpect(status().isCreated()).andExpect(jsonPath("$.id").isNumber())
-				.andExpect(jsonPath("$.email").value("mozo.registro@elhornero.pe"))
-				.andExpect(jsonPath("$.rol").value("MOZO")).andReturn();
-		int id = leerId(creacion);
-
-		assertThat(usuarioRepository.findById(id)).hasValueSatisfying(usuario -> {
-			// la password no se guarda en claro
-			assertThat(usuario.getPassword()).isNotEqualTo(CONTRASENA);
-			assertThat(passwordEncoder.matches(CONTRASENA, usuario.getPassword())).isTrue();
-		});
-	}
-
-	@Test
-	void registrarUsuarioCajeroEsPermitido() throws Exception {
-		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
-				.content(cuerpoRegistro("cajero.registro@elhornero.pe", "CAJERO")))
-				.andExpect(status().isCreated()).andExpect(jsonPath("$.rol").value("CAJERO"));
-	}
-
-	@Test
-	void registrarUsuarioConRolAdministradorEsRechazado() throws Exception {
-		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
-				.content(cuerpoRegistro("admin.fake@elhornero.pe", "ADMINISTRADOR")))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.mensaje").value(
-						"No se puede registrar un usuario con rol ADMINISTRADOR"));
-	}
-
-	@Test
-	void registrarUsuarioConRolDesconocidoEsRechazado() throws Exception {
-		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
-				.content(cuerpoRegistro("rol.malo@elhornero.pe", "SUPERVISOR")))
-				.andExpect(status().isBadRequest());
-	}
-
-	@Test
-	void registrarSinPasswordEsRechazadoPorValidacion() throws Exception {
-		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"email\":\"sin.password@elhornero.pe\",\"rol\":\"MOZO\"}"))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.mensaje").value("La contrasena es obligatoria"));
-	}
-
-	@Test
-	void registrarConCorreoDuplicadoDevuelve409() throws Exception {
-		registrar("duplicado@elhornero.pe", "MOZO");
-
-		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
-				.content(cuerpoRegistro("duplicado@elhornero.pe", "CAJERO")))
-				.andExpect(status().isConflict())
-				.andExpect(jsonPath("$.mensaje")
-						.value("Ya existe un usuario con el correo 'duplicado@elhornero.pe'"));
-	}
-
-	@Test
-	void registrarConCorreoDuplicadoIgnoraMayusculas() throws Exception {
-		registrar("Dup.Test@elhornero.pe", "MOZO");
-
-		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
-				.content(cuerpoRegistro("dup.test@elhornero.pe", "MOZO")))
-				.andExpect(status().isConflict())
-				.andExpect(jsonPath("$.mensaje")
-						.value("Ya existe un usuario con el correo 'dup.test@elhornero.pe'"));
-	}
-
-	@Test
-	void registrarConCorreoInvalidoDevuelve400() throws Exception {
-		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
-				.content(cuerpoRegistro("no-es-un-correo", "MOZO")))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.mensaje").value("El correo no tiene un formato valido"));
-	}
-
-	@Test
-	void registrarConPasswordCortaDevuelve400() throws Exception {
-		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"email\":\"corta@elhornero.pe\",\"password\":\"123\",\"rol\":\"MOZO\"}"))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.mensaje")
-						.value("La contrasena debe tener entre 6 y 255 caracteres"));
-	}
-
-	@Test
-	void registrarSinRolEsRechazadoPorValidacion() throws Exception {
-		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"email\":\"sin.rol@elhornero.pe\",\"password\":\"" + CONTRASENA + "\"}"))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.mensaje").value("El rol es obligatorio"));
-	}
-
-	@Test
-	void registrarConTelefonoInvalidoDevuelve400() throws Exception {
-		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
-				.content("{\"email\":\"tel.malo@elhornero.pe\",\"password\":\"" + CONTRASENA
-						+ "\",\"telefono\":\"abc\",\"rol\":\"MOZO\"}"))
-				.andExpect(status().isBadRequest())
-				.andExpect(jsonPath("$.mensaje").value(
-						"El telefono solo puede contener numeros, espacios, guiones, parentesis y el signo +"));
-	}
-
-	// ------------------------------------------------------------------
 	// Login
 	// ------------------------------------------------------------------
 
 	@Test
 	void loginCorrectoEmiteTokenBearer() throws Exception {
-		registrar("login.ok@elhornero.pe", "MOZO");
+		crearUsuarioDirecto("login.ok@elhornero.pe", "MOZO");
 
 		MvcResult login = mockMvc
 				.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
@@ -171,7 +63,7 @@ class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
 
 	@Test
 	void loginConPasswordIncorrectaDevuelve401() throws Exception {
-		registrar("login.mala@elhornero.pe", "MOZO");
+		crearUsuarioDirecto("login.mala@elhornero.pe", "MOZO");
 
 		mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
 				.content(cuerpoLogin("login.mala@elhornero.pe", "otra.password")))
@@ -216,8 +108,18 @@ class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
 	}
 
 	@Test
+	void registroPublicoYaNoExiste() throws Exception {
+		// La ruta /registro ya no es publica: sin token la seguridad la
+		// rechaza antes de llegar al controlador (que tampoco la expone).
+		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"email\":\"nuevo@elhornero.pe\",\"password\":\"" + CONTRASENA
+						+ "\",\"rol\":\"MOZO\"}"))
+				.andExpect(status().isUnauthorized());
+	}
+
+	@Test
 	void lecturaDeCartaPermitidaParaCualquierAutenticado() throws Exception {
-		registrar("mozo.carta@elhornero.pe", "MOZO");
+		crearUsuarioDirecto("mozo.carta@elhornero.pe", "MOZO");
 		String token = login("mozo.carta@elhornero.pe");
 
 		mockMvc.perform(get("/api/platos").header("Authorization", bearer(token)))
@@ -228,8 +130,8 @@ class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
 
 	@Test
 	void inventarioSoloAdministrador() throws Exception {
-		registrar("mozo.inventario@elhornero.pe", "MOZO");
-		registrar("cajero.inventario@elhornero.pe", "CAJERO");
+		crearUsuarioDirecto("mozo.inventario@elhornero.pe", "MOZO");
+		crearUsuarioDirecto("cajero.inventario@elhornero.pe", "CAJERO");
 		crearUsuarioDirecto("admin.inventario@elhornero.pe", "ADMINISTRADOR");
 		String tokenMozo = login("mozo.inventario@elhornero.pe");
 		String tokenCajero = login("cajero.inventario@elhornero.pe");
@@ -249,8 +151,8 @@ class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
 
 	@Test
 	void salonYPedidosSoloAdministradorOMozo() throws Exception {
-		registrar("mozo.salon@elhornero.pe", "MOZO");
-		registrar("cajero.salon@elhornero.pe", "CAJERO");
+		crearUsuarioDirecto("mozo.salon@elhornero.pe", "MOZO");
+		crearUsuarioDirecto("cajero.salon@elhornero.pe", "CAJERO");
 		String tokenMozo = login("mozo.salon@elhornero.pe");
 		String tokenCajero = login("cajero.salon@elhornero.pe");
 
@@ -270,8 +172,8 @@ class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
 
 	@Test
 	void comprobantesSoloAdministradorOCajero() throws Exception {
-		registrar("mozo.caja@elhornero.pe", "MOZO");
-		registrar("cajero.caja@elhornero.pe", "CAJERO");
+		crearUsuarioDirecto("mozo.caja@elhornero.pe", "MOZO");
+		crearUsuarioDirecto("cajero.caja@elhornero.pe", "CAJERO");
 		String tokenMozo = login("mozo.caja@elhornero.pe");
 		String tokenCajero = login("cajero.caja@elhornero.pe");
 
@@ -291,8 +193,8 @@ class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
 
 	@Test
 	void clientesYProveedoresMatrizDeRoles() throws Exception {
-		registrar("mozo.clientes@elhornero.pe", "MOZO");
-		registrar("cajero.clientes@elhornero.pe", "CAJERO");
+		crearUsuarioDirecto("mozo.clientes@elhornero.pe", "MOZO");
+		crearUsuarioDirecto("cajero.clientes@elhornero.pe", "CAJERO");
 		crearUsuarioDirecto("admin.clientes@elhornero.pe", "ADMINISTRADOR");
 		String tokenMozo = login("mozo.clientes@elhornero.pe");
 		String tokenCajero = login("cajero.clientes@elhornero.pe");
@@ -317,7 +219,7 @@ class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
 
 	@Test
 	void escrituraDePlatosSoloAdministrador() throws Exception {
-		registrar("mozo.platos@elhornero.pe", "MOZO");
+		crearUsuarioDirecto("mozo.platos@elhornero.pe", "MOZO");
 		crearUsuarioDirecto("admin.platos@elhornero.pe", "ADMINISTRADOR");
 		String tokenMozo = login("mozo.platos@elhornero.pe");
 		String tokenAdmin = login("admin.platos@elhornero.pe");
@@ -343,11 +245,6 @@ class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
 	// Helpers
 	// ------------------------------------------------------------------
 
-	private void registrar(String email, String rol) throws Exception {
-		mockMvc.perform(post("/api/auth/registro").contentType(MediaType.APPLICATION_JSON)
-				.content(cuerpoRegistro(email, rol))).andExpect(status().isCreated());
-	}
-
 	private String login(String email) throws Exception {
 		MvcResult resultado = mockMvc
 				.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
@@ -357,8 +254,8 @@ class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
 	}
 
 	/**
-	 * Crea un usuario directamente en la BD (via repositorio) para poder
-	 * obtener tokens de ADMINISTRADOR, que el registro publico no acepta.
+	 * Crea un usuario directamente en la BD (via repositorio): el registro
+	 * publico ya no existe y el alta real esta en UsuarioGestionTest.
 	 */
 	private void crearUsuarioDirecto(String email, String rol) {
 		Persona persona = new Persona();
@@ -369,12 +266,6 @@ class RegistroLoginSeguridadTest extends BasePruebaIntegracion {
 		persona.setUsuario(usuario);
 		usuario.setPassword(passwordEncoder.encode(CONTRASENA));
 		usuarioRepository.save(usuario);
-	}
-
-	private String cuerpoRegistro(String email, String rol) {
-		return "{\"email\":\"" + email + "\",\"password\":\"" + CONTRASENA
-				+ "\",\"telefono\":\"999888777\",\"direccion\":\"Av. Test 123\",\"rol\":\""
-				+ rol + "\"}";
 	}
 
 	private String cuerpoLogin(String email, String password) {

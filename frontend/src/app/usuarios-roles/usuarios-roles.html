@@ -70,32 +70,9 @@
 
         <button
           type="button"
-          class="relative grid h-9 w-9 place-items-center rounded-full border border-cream-400 bg-[#fffdf9] text-ink-700 shadow-pill transition-colors hover:bg-cream-100"
-          aria-label="Notificaciones"
-        >
-          <svg
-            class="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-          </svg>
-          <span
-            class="absolute top-2 right-[9px] h-1.5 w-1.5 rounded-full border-[1.5px] border-[#fffdf9] bg-terra-600"
-            aria-hidden="true"
-          ></span>
-        </button>
-
-        <button
-          type="button"
           class="inline-flex items-center gap-2 rounded-[10px] bg-terra-600 px-4 py-2.5 text-[0.8rem] font-semibold whitespace-nowrap text-white shadow-pill transition-colors hover:bg-terra-700"
-          (click)="abrirModal()"
+          (click)="abrirCrear()"
+
         >
           <svg
             class="h-3.5 w-3.5"
@@ -200,8 +177,7 @@
                 <tr class="text-[0.62rem] font-semibold tracking-[0.06em] text-ink-400 uppercase">
                   <th scope="col" class="px-4 py-3 font-semibold">Usuario</th>
                   <th scope="col" class="px-4 py-3 font-semibold">Rol</th>
-                  <th scope="col" class="px-4 py-3 font-semibold">Estado</th>
-                  <th scope="col" class="px-4 py-3 font-semibold">Último acceso</th>
+                  <th scope="col" class="px-4 py-3 font-semibold">Teléfono</th>
                   <th scope="col" class="px-4 py-3 text-right font-semibold">
                     <span class="sr-only">Acciones</span>
                   </th>
@@ -219,11 +195,11 @@
                           class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-surface-dark text-[0.68rem] font-semibold tracking-wide text-white"
                           aria-hidden="true"
                         >
-                          {{ usuario.iniciales }}
+                          {{ inicialesDe(usuario) }}
                         </span>
                         <div class="min-w-0">
                           <p class="text-[0.8rem] font-semibold text-ink-900">
-                            {{ usuario.nombre }}
+                            {{ usuario.nombre || 'Sin nombre' }}
                           </p>
                           <p class="mt-0.5 truncate text-[0.66rem] text-ink-400">
                             {{ usuario.email }}
@@ -236,52 +212,68 @@
                     >
                       {{ usuario.rol }}
                     </td>
-                    <td class="px-4 py-3.5">
-                      <span
-                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.66rem] font-semibold whitespace-nowrap"
-                        [class]="
-                          usuario.estado === 'ACTIVO'
-                            ? 'bg-ok-100 text-ok-700'
-                            : 'bg-danger-100 text-danger-700'
-                        "
-                      >
-                        <span
-                          class="h-1.5 w-1.5 rounded-full"
-                          [class]="usuario.estado === 'ACTIVO' ? 'bg-ok-600' : 'bg-danger-600'"
-                          aria-hidden="true"
-                        ></span>
-                        {{ usuario.estado }}
-                      </span>
-                    </td>
                     <td
                       class="px-4 py-3.5 text-[0.78rem] tabular-nums whitespace-nowrap text-ink-500"
                     >
-                      {{ usuario.ultimoAcceso }}
+                      {{ usuario.telefono || '—' }}
                     </td>
                     <td class="px-4 py-3.5 text-right">
-                      <button
-                        type="button"
-                        class="grid h-7 w-7 place-items-center rounded-lg text-ink-400 transition-colors hover:bg-cream-200 hover:text-ink-700"
-                        (click)="$event.stopPropagation(); seleccionarUsuario(usuario)"
-                        [attr.aria-label]="'Acciones de ' + usuario.nombre"
-                      >
-                        <svg
-                          class="h-4 w-4"
-                          viewBox="0 0 24 24"
-                          fill="currentColor"
-                          aria-hidden="true"
+                      <div class="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          class="grid h-7 w-7 place-items-center rounded-lg text-ink-400 transition-colors hover:bg-cream-200 hover:text-ink-700"
+                          (click)="$event.stopPropagation(); abrirEditar(usuario)"
+                          [attr.aria-label]="'Editar ' + usuario.nombre"
                         >
-                          <circle cx="5" cy="12" r="1.6" />
-                          <circle cx="12" cy="12" r="1.6" />
-                          <circle cx="19" cy="12" r="1.6" />
-                        </svg>
-                      </button>
+                          <svg
+                            class="h-4 w-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          class="grid h-7 w-7 place-items-center rounded-lg text-ink-400 transition-colors hover:bg-cream-200 hover:text-ink-700"
+                          (click)="$event.stopPropagation(); abrirPassword(usuario)"
+                          [attr.aria-label]="'Contraseña de ' + usuario.nombre"
+                        >
+                          <svg
+                            class="h-4 w-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.8"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <circle cx="8" cy="15" r="4" />
+                            <path d="m10.8 12.2 8.2-8.2" />
+                            <path d="m16 6 2 2" />
+                            <path d="m13 9 2 2" />
+                          </svg>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 } @empty {
                   <tr class="border-t border-cream-300">
-                    <td colspan="5" class="px-4 py-10 text-center text-[0.8rem] text-ink-400">
-                      No se encontraron usuarios con la búsqueda aplicada.
+                    <td colspan="4" class="px-4 py-10 text-center text-[0.8rem] text-ink-400">
+                      @if (cargando()) {
+                        Cargando usuarios…
+                      } @else if (errorLista()) {
+                        {{ errorLista() }}
+                      } @else {
+                        No se encontraron usuarios con la búsqueda aplicada.
+                      }
                     </td>
                   </tr>
                 }
@@ -318,14 +310,7 @@
             <ul class="mt-3.5">
               @for (permiso of permisosDelRol(); track permiso.clave) {
                 <li class="border-t border-white/10 first:border-t-0">
-                  <button
-                    type="button"
-                    class="flex w-full items-center gap-2.5 py-2.5 text-left transition-opacity disabled:cursor-default"
-                    [disabled]="!editandoPermisos()"
-                    [class.cursor-pointer]="editandoPermisos()"
-                    (click)="alternarPermiso(permiso.clave)"
-                    [attr.aria-pressed]="permiso.habilitado"
-                  >
+                  <div class="flex w-full items-center gap-2.5 py-2.5 text-left">
                     <svg
                       class="h-[18px] w-[18px] shrink-0"
                       viewBox="0 0 24 24"
@@ -349,7 +334,7 @@
                     >
                       {{ permiso.label }}
                     </span>
-                  </button>
+                  </div>
                 </li>
               }
             </ul>
@@ -360,54 +345,14 @@
               <span class="text-[0.68rem] text-white/45">
                 {{ permisosActivos() }} de {{ permisosDelRol().length }} habilitados
               </span>
-              @if (editandoPermisos()) {
-                <span class="text-[0.68rem] font-semibold text-[#ef8b62]"> Modificando… </span>
-              }
             </div>
 
-            <button
-              type="button"
-              class="mt-3.5 inline-flex w-full items-center justify-center gap-2 rounded-[10px] bg-terra-600 px-4 py-3 text-[0.8rem] font-semibold text-white shadow-pill transition-colors hover:bg-terra-700"
-              (click)="onEditarPermisos()"
-            >
-              @if (editandoPermisos()) {
-                <svg
-                  class="h-4 w-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2.2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
-                Guardar permisos
-              } @else {
-                <svg
-                  class="h-4 w-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  aria-hidden="true"
-                >
-                  <path d="M4 6h10" />
-                  <path d="M18 6h2" />
-                  <circle cx="16" cy="6" r="2" />
-                  <path d="M4 12h4" />
-                  <path d="M12 12h8" />
-                  <circle cx="10" cy="12" r="2" />
-                  <path d="M4 18h10" />
-                  <path d="M18 18h2" />
-                  <circle cx="16" cy="18" r="2" />
-                </svg>
-                Editar permisos
-              }
-            </button>
+            <p class="mt-3.5 text-[0.68rem] leading-relaxed text-white/45">
+              Matriz de acceso aplicada por el backend; se modifica solo con una actualización
+              del sistema.
+            </p>
           </section>
+
 
           <!-- Trazabilidad de accesos -->
           <section
@@ -416,7 +361,7 @@
           >
             <div class="flex items-center justify-between gap-3">
               <h2 class="font-display text-[1.05rem] font-semibold text-ink-900">
-                Trazabilidad de accesos
+                Movimientos de la sesión
               </h2>
               <span class="text-[0.7rem] whitespace-nowrap text-ink-300">Hoy</span>
             </div>
@@ -440,7 +385,7 @@
                 </li>
               } @empty {
                 <li class="border-t border-cream-300 py-4 text-center text-[0.76rem] text-ink-400">
-                  Sin accesos registrados hoy.
+                  Sin movimientos registrados en esta sesión.
                 </li>
               }
             </ul>
@@ -450,8 +395,8 @@
     </main>
   </div>
 
-  <!-- Modal de nuevo usuario -->
-  @if (modalAbierto()) {
+  <!-- Modal de usuarios: crear / editar / restablecer contraseña -->
+  @if (modalModo()) {
     <div
       class="fixed inset-0 z-50 grid place-items-center bg-[#1c1714]/50 p-4"
       (click)="cerrarModal()"
@@ -470,10 +415,30 @@
               id="modal-usuario-titulo"
               class="font-display text-[1.2rem] font-semibold text-ink-900"
             >
-              Nuevo usuario
+              @switch (modalModo()) {
+                @case ('crear') {
+                  Nuevo usuario
+                }
+                @case ('editar') {
+                  Editar usuario
+                }
+                @case ('password') {
+                  Restablecer contraseña
+                }
+              }
             </h2>
             <p class="mt-1 text-[0.72rem] text-ink-400">
-              Registra el acceso y asigna un rol con permisos.
+              @switch (modalModo()) {
+                @case ('crear') {
+                  Registra el acceso y asigna uno de los roles permitidos.
+                }
+                @case ('editar') {
+                  Actualiza los datos y el rol de {{ usuarioEditado()?.email }}.
+                }
+                @case ('password') {
+                  Nueva contraseña de {{ usuarioEditado()?.email }}.
+                }
+              }
             </p>
           </div>
           <button
@@ -498,69 +463,165 @@
         </div>
 
         <div class="mt-4 flex flex-col gap-3.5">
-          <div>
-            <label
-              for="usuario-nombre"
-              class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
-            >
-              Nombre completo
-            </label>
-            <input
-              id="usuario-nombre"
-              type="text"
-              placeholder="Ej. Ana Torres"
-              [value]="formNombre()"
-              (input)="onFormNombre($event)"
-              class="h-[38px] w-full rounded-[10px] border border-cream-400 bg-white px-3 text-[0.8rem] text-ink-800 outline-none transition-colors placeholder:text-ink-300 focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
-            />
-          </div>
-
-          <div>
-            <label
-              for="usuario-correo"
-              class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
-            >
-              Correo corporativo
-            </label>
-            <input
-              id="usuario-correo"
-              type="email"
-              placeholder="nombre@elhornero.pe"
-              [value]="formCorreo()"
-              (input)="onFormCorreo($event)"
-              class="h-[38px] w-full rounded-[10px] border border-cream-400 bg-white px-3 text-[0.8rem] text-ink-800 outline-none transition-colors placeholder:text-ink-300 focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
-            />
-          </div>
-
-          <div>
-            <label for="usuario-rol" class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700">
-              Rol
-            </label>
-            <div class="relative">
-              <select
-                id="usuario-rol"
-                [value]="formRol()"
-                (change)="onFormRol($event)"
-                class="h-[38px] w-full appearance-none rounded-[10px] border border-cream-400 bg-white pr-8 pl-3 text-[0.8rem] text-ink-800 outline-none transition-colors focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+          @if (modalModo() !== 'password') {
+            <div>
+              <label
+                for="usuario-nombre"
+                class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
               >
-                @for (rol of rolOptions; track rol) {
-                  <option [value]="rol">{{ rol }}</option>
-                }
-              </select>
+                Nombre completo
+              </label>
+              <input
+                id="usuario-nombre"
+                type="text"
+                placeholder="Ej. Ana Torres"
+                [value]="formNombre()"
+                (input)="onFormNombre($event)"
+                class="h-[38px] w-full rounded-[10px] border border-cream-400 bg-white px-3 text-[0.8rem] text-ink-800 outline-none transition-colors placeholder:text-ink-300 focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+              />
+            </div>
+
+            <div>
+              <label
+                for="usuario-correo"
+                class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
+              >
+                Correo corporativo
+              </label>
+              <input
+                id="usuario-correo"
+                type="email"
+                placeholder="nombre@elhornero.pe"
+                [value]="formCorreo()"
+                (input)="onFormCorreo($event)"
+                class="h-[38px] w-full rounded-[10px] border border-cream-400 bg-white px-3 text-[0.8rem] text-ink-800 outline-none transition-colors placeholder:text-ink-300 focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+              />
+            </div>
+
+            <div class="grid grid-cols-1 gap-3.5 min-[430px]:grid-cols-2">
+              <div>
+                <label
+                  for="usuario-telefono"
+                  class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
+                >
+                  Teléfono
+                </label>
+                <input
+                  id="usuario-telefono"
+                  type="tel"
+                  placeholder="999 888 777"
+                  [value]="formTelefono()"
+                  (input)="onFormTelefono($event)"
+                  class="h-[38px] w-full rounded-[10px] border border-cream-400 bg-white px-3 text-[0.8rem] text-ink-800 outline-none transition-colors placeholder:text-ink-300 focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+                />
+              </div>
+
+              <div>
+                <label
+                  for="usuario-rol"
+                  class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
+                >
+                  Rol
+                </label>
+                <div class="relative">
+                  <select
+                    id="usuario-rol"
+                    [value]="formRol()"
+                    (change)="onFormRol($event)"
+                    [disabled]="modalModo() === 'editar' && esElUsuarioActual(usuarioEditado())"
+                    class="h-[38px] w-full appearance-none rounded-[10px] border border-cream-400 bg-white pr-8 pl-3 text-[0.8rem] text-ink-800 outline-none transition-colors focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15 disabled:bg-cream-200 disabled:text-ink-400"
+                  >
+                    @for (rol of rolOptions; track rol) {
+                      <option [value]="rol">{{ rol }}</option>
+                    }
+                  </select>
+                  <svg
+                    class="pointer-events-none absolute top-1/2 right-3 h-3.5 w-3.5 -translate-y-1/2 text-ink-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label
+                for="usuario-direccion"
+                class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
+              >
+                Dirección
+              </label>
+              <input
+                id="usuario-direccion"
+                type="text"
+                placeholder="Av. El Hornero 123"
+                [value]="formDireccion()"
+                (input)="onFormDireccion($event)"
+                class="h-[38px] w-full rounded-[10px] border border-cream-400 bg-white px-3 text-[0.8rem] text-ink-800 outline-none transition-colors placeholder:text-ink-300 focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+              />
+            </div>
+          }
+
+          @if (modalModo() === 'crear' || modalModo() === 'password') {
+            <div>
+              <label
+                for="usuario-password"
+                class="mb-1.5 block text-[0.7rem] font-semibold text-ink-700"
+              >
+                Contraseña
+              </label>
+              <input
+                id="usuario-password"
+                type="password"
+                autocomplete="new-password"
+                placeholder="Mínimo 6 caracteres"
+                [value]="formPassword()"
+                (input)="onFormPassword($event)"
+                class="h-[38px] w-full rounded-[10px] border border-cream-400 bg-white px-3 text-[0.8rem] text-ink-800 outline-none transition-colors placeholder:text-ink-300 focus:border-terra-600/60 focus:ring-2 focus:ring-terra-600/15"
+              />
+            </div>
+          }
+
+          @if (modalModo() === 'editar') {
+            <button
+              type="button"
+              class="inline-flex w-fit items-center gap-2 rounded-[10px] border border-cream-400 bg-white px-3 py-2 text-[0.74rem] font-semibold text-[#3e3227] shadow-pill transition-colors hover:bg-cream-100"
+              (click)="abrirPasswordDelEditado()"
+            >
               <svg
-                class="pointer-events-none absolute top-1/2 right-3 h-3.5 w-3.5 -translate-y-1/2 text-ink-400"
+                class="h-3.5 w-3.5"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                stroke-width="2"
+                stroke-width="1.8"
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 aria-hidden="true"
               >
-                <path d="m6 9 6 6 6-6" />
+                <circle cx="8" cy="15" r="4" />
+                <path d="m10.8 12.2 8.2-8.2" />
+                <path d="m16 6 2 2" />
               </svg>
-            </div>
-          </div>
+              Cambiar contraseña
+            </button>
+          }
+
+
+
+
+          @if (modalModo() === 'password') {
+            <p class="text-[0.72rem] leading-relaxed text-ink-400">
+              Se guardará cifrada con BCrypt. El usuario deberá usarla en su próximo inicio de
+              sesión.
+            </p>
+          }
 
           @if (formError()) {
             <p
@@ -581,8 +642,9 @@
           </button>
           <button
             type="button"
-            class="inline-flex h-[38px] items-center gap-2 rounded-[10px] bg-terra-600 px-4 text-[0.8rem] font-semibold text-white shadow-pill transition-colors hover:bg-terra-700"
-            (click)="crearUsuario()"
+            class="inline-flex h-[38px] items-center gap-2 rounded-[10px] bg-terra-600 px-4 text-[0.8rem] font-semibold text-white shadow-pill transition-colors hover:bg-terra-700 disabled:cursor-not-allowed disabled:opacity-60"
+            (click)="guardar()"
+            [disabled]="cargandoAccion()"
           >
             <svg
               class="h-3.5 w-3.5"
@@ -591,12 +653,23 @@
               stroke="currentColor"
               stroke-width="2.2"
               stroke-linecap="round"
+              stroke-linejoin="round"
               aria-hidden="true"
             >
               <path d="M12 5v14" />
               <path d="M5 12h14" />
             </svg>
-            Crear usuario
+            @switch (modalModo()) {
+              @case ('crear') {
+                Crear usuario
+              }
+              @case ('editar') {
+                Guardar cambios
+              }
+              @case ('password') {
+                Actualizar contraseña
+              }
+            }
           </button>
         </div>
       </div>

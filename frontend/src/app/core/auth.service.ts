@@ -14,25 +14,9 @@ export interface AuthResponse {
   empleadoId: number | null;
 }
 
-export interface RegistroRequest {
-  email: string;
-  password: string;
-  telefono?: string;
-  direccion?: string;
-  rol: string;
-}
-
-export interface UsuarioResponse {
-  id: number;
-  email: string;
-  rol: string;
-  telefono: string | null;
-  direccion: string | null;
-}
-
 const API_AUTH = `${environment.apiUrl}/auth`;
 
-/** Cliente HTTP de autenticación: login y registro contra el backend. */
+/** Cliente HTTP de autenticación: únicamente login (no hay registro público). */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
@@ -53,12 +37,6 @@ export class AuthService {
           recordar
         )
       ),
-      catchError((error) => throwError(() => this.mensajeError(error)))
-    );
-  }
-
-  registrarse(datos: RegistroRequest): Observable<UsuarioResponse> {
-    return this.http.post<UsuarioResponse>(`${API_AUTH}/registro`, datos).pipe(
       catchError((error) => throwError(() => this.mensajeError(error)))
     );
   }

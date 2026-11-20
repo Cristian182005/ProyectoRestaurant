@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { Login } from './login/login';
-import { Registro } from './registro/registro';
 import { AdminDashboard } from './admin/admin-dashboard';
 import { SalonComponent } from './salon/salon.component';
 import { CajaVentas } from './caja-ventas/caja-ventas';
@@ -17,12 +16,6 @@ export const routes: Routes = [
     component: Login,
     canActivate: [loginGuard],
     title: 'Inicio de sesión | El Hornero',
-  },
-  {
-    path: 'registro',
-    component: Registro,
-    canActivate: [loginGuard],
-    title: 'Registro de usuario | El Hornero',
   },
   {
     path: 'dashboard',

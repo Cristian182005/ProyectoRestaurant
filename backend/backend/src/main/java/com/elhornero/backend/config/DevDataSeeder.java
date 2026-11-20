@@ -143,6 +143,9 @@ public class DevDataSeeder implements CommandLineRunner {
 		for (UsuarioSemilla semilla : USUARIOS) {
 			Usuario usuario = usuarioRepository.findByPersonaEmailIgnoreCase(semilla.email())
 					.orElse(null);
+			// Si el usuario ya existe no se duplica ni se tocan su contraseña, nombre o rol:
+			// el administrador puede cambiarlos desde el modulo de gestion sin que el
+			// arranque en desarrollo los revierta.
 			if (usuario == null) {
 				Persona persona = new Persona();
 				persona.setEmail(semilla.email());
@@ -155,13 +158,8 @@ public class DevDataSeeder implements CommandLineRunner {
 				persona.setUsuario(usuario);
 				usuario.setPassword(passwordEncoder.encode(semilla.password()));
 				usuario = usuarioRepository.save(usuario);
-			} else if (!passwordEncoder.matches(semilla.password(), usuario.getPassword())) {
-				usuario.setPassword(passwordEncoder.encode(semilla.password()));
-				usuario = usuarioRepository.save(usuario);
 			}
 			Persona persona = usuario.getPersona();
-			persona.setNombre(semilla.nombre());
-			persona.setRol(semilla.rol());
 			Integer personaId = persona.getId();
 			if (empleadoRepository.findById(personaId).isEmpty()) {
 				Empleado empleado = new Empleado();

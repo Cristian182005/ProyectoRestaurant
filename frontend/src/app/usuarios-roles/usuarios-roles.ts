@@ -1,21 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { MODULOS, Modulo, PermisosService, ROLES_POR_MODULO } from '../core/permisos.service';
 import { SesionService } from '../core/sesion.service';
+import { RolUsuario, Usuario, UsuarioService } from '../core/usuario.service';
 import { SidebarComponent } from '../shared/sidebar/sidebar.component';
 
-export type RolUsuario = 'ADMINISTRADOR' | 'CAJERO' | 'MOZO';
-export type EstadoUsuario = 'ACTIVO' | 'SUSPENDIDO';
-export type TonoKpi = 'terra' | 'ok' | 'info';
-
-export interface Usuario {
-  id: number;
-  nombre: string;
-  email: string;
-  iniciales: string;
-  rol: RolUsuario;
-  estado: EstadoUsuario;
-  ultimoAcceso: string;
-}
+export type EstadoKpi = 'terra' | 'ok' | 'info';
 
 export interface Permiso {
   clave: string;
@@ -29,10 +19,12 @@ export interface RegistroAuditoria {
   accion: string;
 }
 
+type ModoModal = 'crear' | 'editar' | 'password';
+
 interface KpiItem {
   label: string;
   value: string;
-  tone: TonoKpi;
+  tone: EstadoKpi;
   icon: string[];
 }
 
@@ -42,118 +34,16 @@ const DESCRIPCIONES: Record<RolUsuario, string> = {
   ADMINISTRADOR: 'Control total del sistema: usuarios, permisos, configuración y trazabilidad.',
 };
 
-const PERMISOS_BASE: Record<RolUsuario, Permiso[]> = {
-  ADMINISTRADOR: [
-    { clave: 'dashboard', label: 'Dashboard', habilitado: true },
-    { clave: 'salon', label: 'Salón y mesas', habilitado: true },
-    { clave: 'pedidos', label: 'Comandas y pedidos', habilitado: true },
-    { clave: 'caja', label: 'Caja y comprobantes', habilitado: true },
-    { clave: 'inventario', label: 'Inventario', habilitado: true },
-    { clave: 'productos', label: 'Productos y recetas', habilitado: true },
-    { clave: 'reportes', label: 'Reportes', habilitado: true },
-    { clave: 'usuarios', label: 'Usuarios y permisos', habilitado: true },
-  ],
-  CAJERO: [
-    { clave: 'dashboard', label: 'Dashboard', habilitado: true },
-    { clave: 'salon', label: 'Salón y mesas', habilitado: false },
-    { clave: 'pedidos', label: 'Comandas y pedidos', habilitado: false },
-    { clave: 'caja', label: 'Caja y comprobantes', habilitado: true },
-    { clave: 'inventario', label: 'Inventario', habilitado: false },
-    { clave: 'productos', label: 'Productos y recetas', habilitado: false },
-    { clave: 'reportes', label: 'Reportes', habilitado: true },
-    { clave: 'usuarios', label: 'Usuarios y permisos', habilitado: false },
-  ],
-  MOZO: [
-    { clave: 'dashboard', label: 'Dashboard', habilitado: true },
-    { clave: 'salon', label: 'Salón y mesas', habilitado: true },
-    { clave: 'pedidos', label: 'Comandas y pedidos', habilitado: true },
-    { clave: 'caja', label: 'Caja y comprobantes', habilitado: false },
-    { clave: 'inventario', label: 'Inventario', habilitado: false },
-    { clave: 'productos', label: 'Productos y recetas', habilitado: true },
-    { clave: 'reportes', label: 'Reportes', habilitado: false },
-    { clave: 'usuarios', label: 'Usuarios y permisos', habilitado: false },
-  ],
+const ETIQUETAS_MODULO: Record<Modulo, string> = {
+  dashboard: 'Dashboard',
+  salon: 'Salón y mesas',
+  pedidos: 'Comandas y pedidos',
+  caja: 'Caja y comprobantes',
+  inventario: 'Inventario',
+  productos: 'Productos y recetas',
+  reportes: 'Reportes',
+  usuarios: 'Usuarios y permisos',
 };
-
-const USUARIOS_BASE: Usuario[] = [
-  {
-    id: 1,
-    nombre: 'Lucía Mendoza',
-    email: 'lucia.mendoza@elhornero.pe',
-    iniciales: 'LM',
-    rol: 'ADMINISTRADOR',
-    estado: 'ACTIVO',
-    ultimoAcceso: 'Hoy · 18:02',
-  },
-  {
-    id: 2,
-    nombre: 'Rosa Huamán',
-    email: 'rosa.huaman@elhornero.pe',
-    iniciales: 'RH',
-    rol: 'CAJERO',
-    estado: 'ACTIVO',
-    ultimoAcceso: 'Hoy · 17:48',
-  },
-  {
-    id: 3,
-    nombre: 'Javier Rojas',
-    email: 'javier.rojas@elhornero.pe',
-    iniciales: 'JR',
-    rol: 'MOZO',
-    estado: 'ACTIVO',
-    ultimoAcceso: 'Hoy · 17:55',
-  },
-  {
-    id: 4,
-    nombre: 'Mariela Díaz',
-    email: 'mariela.diaz@elhornero.pe',
-    iniciales: 'MD',
-    rol: 'MOZO',
-    estado: 'ACTIVO',
-    ultimoAcceso: 'Hoy · 18:06',
-  },
-  {
-    id: 5,
-    nombre: 'Carlos Soto',
-    email: 'carlos.soto@elhornero.pe',
-    iniciales: 'CS',
-    rol: 'MOZO',
-    estado: 'ACTIVO',
-    ultimoAcceso: 'Hoy · 18:10',
-  },
-  {
-    id: 6,
-    nombre: 'Diego Salazar',
-    email: 'diego.salazar@elhornero.pe',
-    iniciales: 'DS',
-    rol: 'CAJERO',
-    estado: 'SUSPENDIDO',
-    ultimoAcceso: '28 sep · 23:40',
-  },
-];
-
-const AUDITORIA_BASE: RegistroAuditoria[] = [
-  {
-    hora: '20:43',
-    usuario: 'Rosa Huamán',
-    accion: 'Emitió boleta B001-008421',
-  },
-  {
-    hora: '20:41',
-    usuario: 'Lucía Mendoza',
-    accion: 'Autorizó descuento 10%',
-  },
-  {
-    hora: '19:43',
-    usuario: 'Javier Rojas',
-    accion: 'Envió comanda C-1048',
-  },
-  {
-    hora: '18:06',
-    usuario: 'Mariela Díaz',
-    accion: 'Inició turno · Tablet 02',
-  },
-];
 
 @Component({
   selector: 'app-usuarios-roles',
@@ -164,27 +54,36 @@ const AUDITORIA_BASE: RegistroAuditoria[] = [
 export class UsuariosRoles {
   private readonly router = inject(Router);
   private readonly sesion = inject(SesionService);
+  private readonly usuariosService = inject(UsuarioService);
+  private readonly permisos = inject(PermisosService);
 
   private avisoTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly sidebarOpen = signal(false);
   readonly activeSection = signal('Usuarios y roles');
-  readonly dateLabel = 'Jue, 01 oct 2026';
+  readonly dateLabel = new Date().toLocaleDateString('es-PE', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
 
   readonly searchTerm = signal('');
-  readonly usuarios = signal<Usuario[]>(USUARIOS_BASE);
-  readonly rolSeleccionado = signal<RolUsuario>('MOZO');
-  readonly permisosPorRol = signal<Record<RolUsuario, Permiso[]>>({
-    ADMINISTRADOR: PERMISOS_BASE['ADMINISTRADOR'].map((p) => ({ ...p })),
-    CAJERO: PERMISOS_BASE['CAJERO'].map((p) => ({ ...p })),
-    MOZO: PERMISOS_BASE['MOZO'].map((p) => ({ ...p })),
-  });
-  readonly editandoPermisos = signal(false);
-  readonly auditoria = signal<RegistroAuditoria[]>(AUDITORIA_BASE);
+  readonly usuarios = signal<Usuario[]>([]);
+  readonly cargando = signal(false);
+  readonly cargandoAccion = signal(false);
+  readonly errorLista = signal('');
 
-  readonly modalAbierto = signal(false);
+  readonly rolSeleccionado = signal<RolUsuario>('MOZO');
+  readonly auditoria = signal<RegistroAuditoria[]>([]);
+
+  readonly modalModo = signal<ModoModal | null>(null);
+  readonly usuarioEditado = signal<Usuario | null>(null);
   readonly formNombre = signal('');
   readonly formCorreo = signal('');
+  readonly formPassword = signal('');
+  readonly formTelefono = signal('');
+  readonly formDireccion = signal('');
   readonly formRol = signal<RolUsuario>('MOZO');
   readonly formError = signal('');
 
@@ -192,7 +91,14 @@ export class UsuariosRoles {
 
   readonly rolDescripcion = computed(() => DESCRIPCIONES[this.rolSeleccionado()]);
 
-  readonly permisosDelRol = computed(() => this.permisosPorRol()[this.rolSeleccionado()]);
+  /** Matriz real de acceso que aplica el backend (roleGuard + SecurityConfig). */
+  readonly permisosDelRol = computed<Permiso[]>(() =>
+    MODULOS.map((modulo) => ({
+      clave: modulo,
+      label: ETIQUETAS_MODULO[modulo],
+      habilitado: ROLES_POR_MODULO[modulo].includes(this.rolSeleccionado()),
+    })),
+  );
 
   readonly permisosActivos = computed(
     () => this.permisosDelRol().filter((permiso) => permiso.habilitado).length,
@@ -202,19 +108,7 @@ export class UsuariosRoles {
     () => this.usuarios().filter((usuario) => usuario.rol === this.rolSeleccionado()).length,
   );
 
-  readonly filtered = computed(() => {
-    const term = this.searchTerm().trim().toLowerCase();
-    if (!term) {
-      return this.usuarios();
-    }
-    return this.usuarios().filter(
-      (usuario) =>
-        usuario.nombre.toLowerCase().includes(term) ||
-        usuario.email.toLowerCase().includes(term) ||
-        usuario.rol.toLowerCase().includes(term) ||
-        usuario.estado.toLowerCase().includes(term),
-    );
-  });
+  readonly filtered = computed(() => this.usuarios());
 
   readonly kpis = computed<KpiItem[]>(() => {
     const lista = this.usuarios();
@@ -222,8 +116,8 @@ export class UsuariosRoles {
 
     return [
       {
-        label: 'Usuarios activos',
-        value: String(lista.filter((usuario) => usuario.estado === 'ACTIVO').length),
+        label: 'Usuarios registrados',
+        value: String(lista.length),
         tone: 'terra',
         icon: [
           'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2',
@@ -262,13 +156,42 @@ export class UsuariosRoles {
     ];
   });
 
-  readonly kpiTone: Record<TonoKpi, { box: string; value: string }> = {
+  readonly kpiTone: Record<EstadoKpi, { box: string; value: string }> = {
     terra: { box: 'bg-terra-100 text-terra-600', value: 'text-terra-600' },
     ok: { box: 'bg-ok-100 text-ok-700', value: 'text-ok-700' },
     info: { box: 'bg-info-100 text-info-700', value: 'text-info-700' },
   };
 
   readonly rolOptions: RolUsuario[] = ['MOZO', 'CAJERO', 'ADMINISTRADOR'];
+
+  constructor() {
+    this.cargar();
+  }
+
+  // ----------------------------------------------------------------
+  // Listado
+  // ----------------------------------------------------------------
+
+  cargar(buscar?: string): void {
+    this.cargando.set(true);
+    this.errorLista.set('');
+    this.usuariosService.listar(buscar).subscribe({
+      next: (lista) => {
+        this.cargando.set(false);
+        this.usuarios.set(lista);
+      },
+      error: (mensaje: string) => {
+        this.cargando.set(false);
+        this.errorLista.set(mensaje);
+      },
+    });
+  }
+
+  onSearch(event: Event): void {
+    const termino = (event.target as HTMLInputElement).value;
+    this.searchTerm.set(termino);
+    this.cargar(termino.trim() || undefined);
+  }
 
   toggleSidebar(): void {
     this.sidebarOpen.update((open) => !open);
@@ -283,60 +206,76 @@ export class UsuariosRoles {
     void this.router.navigate(['/']);
   }
 
-  onSearch(event: Event): void {
-    this.searchTerm.set((event.target as HTMLInputElement).value);
-  }
-
   seleccionarUsuario(usuario: Usuario): void {
     if (usuario.rol !== this.rolSeleccionado()) {
       this.rolSeleccionado.set(usuario.rol);
-      this.editandoPermisos.set(false);
     }
   }
 
   seleccionarRol(rol: RolUsuario): void {
-    if (rol !== this.rolSeleccionado()) {
-      this.rolSeleccionado.set(rol);
-      this.editandoPermisos.set(false);
-    }
+    this.rolSeleccionado.set(rol);
   }
 
-  alternarPermiso(clave: string): void {
-    if (!this.editandoPermisos()) {
-      return;
-    }
-    const rol = this.rolSeleccionado();
-    this.permisosPorRol.update((mapa) => ({
-      ...mapa,
-      [rol]: mapa[rol].map((permiso) =>
-        permiso.clave === clave ? { ...permiso, habilitado: !permiso.habilitado } : permiso,
-      ),
-    }));
+  inicialesDe(usuario: Usuario): string {
+    const origen = (usuario.nombre ?? usuario.email).trim();
+    return origen
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((parte) => parte.charAt(0).toUpperCase())
+      .join('');
   }
 
-  onEditarPermisos(): void {
-    const rol = this.rolSeleccionado();
-
-    if (!this.editandoPermisos()) {
-      this.editandoPermisos.set(true);
-      return;
-    }
-
-    this.editandoPermisos.set(false);
-    this.registrarAuditoria(`Actualizó permisos del rol ${rol}`);
-    this.mostrarAviso(`Permisos de ${rol} actualizados correctamente.`);
+  /** El backend rechaza que un usuario modifique su propio rol. */
+  esElUsuarioActual(usuario: Usuario | null): boolean {
+    return !!usuario && usuario.id === this.sesion.id();
   }
 
-  abrirModal(): void {
+  // ----------------------------------------------------------------
+  // Modal de creación
+  // ----------------------------------------------------------------
+
+  abrirCrear(): void {
     this.formNombre.set('');
     this.formCorreo.set('');
+    this.formPassword.set('');
+    this.formTelefono.set('');
+    this.formDireccion.set('');
     this.formRol.set('MOZO');
     this.formError.set('');
-    this.modalAbierto.set(true);
+    this.usuarioEditado.set(null);
+    this.modalModo.set('crear');
+  }
+
+  abrirEditar(usuario: Usuario): void {
+    this.formNombre.set(usuario.nombre ?? '');
+    this.formCorreo.set(usuario.email);
+    this.formPassword.set('');
+    this.formTelefono.set(usuario.telefono ?? '');
+    this.formDireccion.set(usuario.direccion ?? '');
+    this.formRol.set(usuario.rol);
+    this.formError.set('');
+    this.usuarioEditado.set(usuario);
+    this.modalModo.set('editar');
+  }
+
+  abrirPassword(usuario: Usuario): void {
+    this.formPassword.set('');
+    this.formError.set('');
+    this.usuarioEditado.set(usuario);
+    this.modalModo.set('password');
+  }
+
+  abrirPasswordDelEditado(): void {
+    const usuario = this.usuarioEditado();
+    if (usuario) {
+      this.abrirPassword(usuario);
+    }
   }
 
   cerrarModal(): void {
-    this.modalAbierto.set(false);
+    this.modalModo.set(null);
+    this.usuarioEditado.set(null);
     this.formError.set('');
   }
 
@@ -348,63 +287,192 @@ export class UsuariosRoles {
     this.formCorreo.set((event.target as HTMLInputElement).value);
   }
 
+  onFormPassword(event: Event): void {
+    this.formPassword.set((event.target as HTMLInputElement).value);
+  }
+
+  onFormTelefono(event: Event): void {
+    this.formTelefono.set((event.target as HTMLInputElement).value);
+  }
+
+  onFormDireccion(event: Event): void {
+    this.formDireccion.set((event.target as HTMLInputElement).value);
+  }
+
   onFormRol(event: Event): void {
     this.formRol.set((event.target as HTMLSelectElement).value as RolUsuario);
   }
 
-  crearUsuario(): void {
+  guardar(): void {
+    switch (this.modalModo()) {
+      case 'crear':
+        this.crearUsuario();
+        break;
+      case 'editar':
+        this.editarUsuario();
+        break;
+      case 'password':
+        this.cambiarPassword();
+        break;
+      default:
+        break;
+    }
+  }
+
+  private crearUsuario(): void {
     const nombre = this.formNombre().trim();
-    const correo = this.formCorreo().trim().toLowerCase();
+    const correo = this.formCorreo().trim();
+    const password = this.formPassword();
     const rol = this.formRol();
 
     if (!nombre) {
       this.formError.set('Ingresa el nombre completo del usuario.');
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+      this.formError.set('Ingresa un correo corporativo válido.');
+      return;
+    }
+    if (password.length < 6) {
+      this.formError.set('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
 
+    this.formError.set('');
+    this.cargandoAccion.set(true);
+
+    this.usuariosService
+      .crear({
+        email: correo,
+        password,
+        nombre,
+        telefono: this.formTelefono().trim() || null,
+        direccion: this.formDireccion().trim() || null,
+        rol,
+      })
+      .subscribe({
+        next: (usuario) => {
+          this.cargandoAccion.set(false);
+          this.cargar();
+          this.registrarAuditoria(`Creó el usuario ${usuario.nombre ?? usuario.email}`);
+          this.cerrarModal();
+          this.mostrarAviso(`Usuario ${usuario.nombre ?? usuario.email} creado correctamente.`);
+        },
+        error: (mensaje: string) => {
+          this.cargandoAccion.set(false);
+          this.formError.set(mensaje);
+        },
+      });
+  }
+
+  private editarUsuario(): void {
+    const usuario = this.usuarioEditado();
+    if (!usuario) {
+      return;
+    }
+
+    const nombre = this.formNombre().trim();
+    const correo = this.formCorreo().trim();
+    if (!nombre) {
+      this.formError.set('Ingresa el nombre completo del usuario.');
+      return;
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
       this.formError.set('Ingresa un correo corporativo válido.');
       return;
     }
 
-    if (this.usuarios().some((usuario) => usuario.email === correo)) {
-      this.formError.set('Ya existe un usuario registrado con ese correo.');
+    this.formError.set('');
+    this.cargandoAccion.set(true);
+
+    this.usuariosService
+      .actualizar(usuario.id, {
+        nombre,
+        email: correo,
+        telefono: this.formTelefono().trim() || null,
+        direccion: this.formDireccion().trim() || null,
+      })
+      .subscribe({
+        next: () => {
+          const rolCambiado = this.formRol() !== usuario.rol && !this.esElUsuarioActual(usuario);
+          if (rolCambiado) {
+            this.aplicarCambioDeRol(usuario);
+            return;
+          }
+          this.finalizarEdicion(usuario, 'Actualizó los datos del usuario');
+        },
+        error: (mensaje: string) => {
+          this.cargandoAccion.set(false);
+          this.formError.set(mensaje);
+        },
+      });
+  }
+
+  private aplicarCambioDeRol(usuario: Usuario): void {
+    this.usuariosService.cambiarRol(usuario.id, this.formRol()).subscribe({
+      next: () => {
+        this.finalizarEdicion(
+          usuario,
+          `Cambió el rol de ${usuario.nombre ?? usuario.email} a ${this.formRol()}`,
+        );
+      },
+      error: (mensaje: string) => {
+        this.cargandoAccion.set(false);
+        this.formError.set(mensaje);
+      },
+    });
+  }
+
+  private finalizarEdicion(usuario: Usuario, accion: string): void {
+    this.cargandoAccion.set(false);
+    this.cargar();
+    this.registrarAuditoria(accion);
+    this.cerrarModal();
+    this.mostrarAviso('Usuario actualizado correctamente.');
+  }
+
+  private cambiarPassword(): void {
+    const usuario = this.usuarioEditado();
+    if (!usuario) {
       return;
     }
 
-    const siguienteId = this.usuarios().reduce((max, usuario) => Math.max(max, usuario.id), 0) + 1;
+    const password = this.formPassword();
+    if (password.length < 6) {
+      this.formError.set('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
 
-    const nuevo: Usuario = {
-      id: siguienteId,
-      nombre,
-      email: correo,
-      iniciales: this.calcularIniciales(nombre),
-      rol,
-      estado: 'ACTIVO',
-      ultimoAcceso: 'Sin acceso aún',
-    };
+    this.formError.set('');
+    this.cargandoAccion.set(true);
 
-    this.usuarios.update((lista) => [...lista, nuevo]);
-    this.registrarAuditoria(`Creó el usuario ${nombre}`);
-    this.cerrarModal();
-    this.mostrarAviso(`Usuario ${nombre} creado correctamente.`);
+    this.usuariosService.cambiarPassword(usuario.id, password).subscribe({
+      next: () => {
+        this.cargandoAccion.set(false);
+        this.registrarAuditoria(`Restableció la contraseña de ${usuario.nombre ?? usuario.email}`);
+        this.cerrarModal();
+        this.mostrarAviso('Contraseña actualizada correctamente.');
+      },
+      error: (mensaje: string) => {
+        this.cargandoAccion.set(false);
+        this.formError.set(mensaje);
+      },
+    });
   }
 
-  private calcularIniciales(nombre: string): string {
-    return nombre
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((parte) => parte.charAt(0).toUpperCase())
-      .join('');
-  }
+  // ----------------------------------------------------------------
+  // Utilidades
+  // ----------------------------------------------------------------
 
   private registrarAuditoria(accion: string): void {
     const ahora = new Date()
       .toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false })
       .replace('.', ':');
 
-    this.auditoria.update((lista) => [{ hora: ahora, usuario: 'Lucía Mendoza', accion }, ...lista]);
+    this.auditoria.update((lista) => [
+      { hora: ahora, usuario: this.sesion.email() ?? 'Sistema', accion },
+      ...lista,
+    ]);
   }
 
   private mostrarAviso(texto: string): void {

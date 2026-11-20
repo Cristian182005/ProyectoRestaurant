@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { AuthService } from '../core/auth.service';
 
 @Component({
@@ -12,7 +12,6 @@ import { AuthService } from '../core/auth.service';
 export class Login {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
-  private readonly route = inject(ActivatedRoute);
 
   readonly email = signal('');
   readonly password = signal('');
@@ -21,12 +20,6 @@ export class Login {
   readonly cargando = signal(false);
   readonly errorMessage = signal('');
   readonly aviso = signal('');
-
-  constructor() {
-    if (this.route.snapshot.queryParamMap.get('registro') === 'ok') {
-      this.aviso.set('Cuenta creada correctamente. Inicia sesión para continuar.');
-    }
-  }
 
   onSubmit(): void {
     const email = this.email().trim();
@@ -56,9 +49,5 @@ export class Login {
   onRecover(): void {
     this.aviso.set('La recuperación de acceso estará disponible próximamente.');
     this.errorMessage.set('');
-  }
-
-  irARegistro(): void {
-    void this.router.navigate(['/registro']);
   }
 }
